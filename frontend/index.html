@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1220">
+  <title>SafeSphere AI | Safety Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand-icon">🛡️</span>
+      <span>SafeSphere <strong>AI</strong></span>
+    </a>
+
+    <div class="topbar-right">
+      <span id="userLabel" class="user-label">Not signed in</span>
+      <button id="logoutBtn" class="button button-outline hidden" type="button">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <main class="page">
+    <!-- AUTH SECTION -->
+    <section id="authSection" class="auth-layout">
+      <div class="hero-panel">
+        <div class="eyebrow">YOUR PERSONAL SAFETY SPACE</div>
+        <h1>Safety starts with being <span>prepared.</span></h1>
+        <p>
+          Report incidents, keep trusted contacts close, and organize
+          your safety information in one place.
+        </p>
+
+        <div class="hero-points">
+          <div><span>✓</span> Incident reporting</div>
+          <div><span>✓</span> Personal safety contacts</div>
+          <div><span>✓</span> Secure account-based dashboard</div>
+        </div>
+
+        <p class="small-note">
+          Demo application — not a replacement for emergency services.
+        </p>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button id="showLoginBtn" class="tab active" type="button">
+            Login
+          </button>
+          <button id="showRegisterBtn" class="tab" type="button">
+            Register
+          </button>
+        </div>
+
+        <form id="loginForm" class="auth-form">
+          <h2>Welcome back</h2>
+          <p class="muted">Log in to your SafeSphere account.</p>
+
+          <label for="loginEmail">Email address</label>
+          <input
+            id="loginEmail"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+          >
+
+          <label for="loginPassword">Password</label>
+          <input
+            id="loginPassword"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter your password"
+            required
+          >
+
+          <button class="button button-primary full-width" type="submit">
+            Login
+          </button>
+        </form>
+
+        <form id="registerForm" class="auth-form hidden">
+          <h2>Create account</h2>
+          <p class="muted">Get started with your safety dashboard.</p>
+
+          <label for="registerName">Full name</label>
+          <input
+            id="registerName"
+            type="text"
+            minlength="2"
+            maxlength="100"
+            autocomplete="name"
+            placeholder="Your full name"
+            required
+          >
+
+          <label for="registerEmail">Email address</label>
+          <input
+            id="registerEmail"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+          >
+
+          <label for="registerPassword">Password</label>
+          <input
+            id="registerPassword"
+            type="password"
+            minlength="8"
+            maxlength="128"
+            autocomplete="new-password"
+            placeholder="At least 8 characters"
+            required
+          >
+
+          <button class="button button-primary full-width" type="submit">
+            Create account
+          </button>
+        </form>
+
+        <div id="authMessage" class="message" role="status"></div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD SECTION -->
+    <section id="dashboardSection" class="hidden">
+      <div class="dashboard-heading">
+        <div>
+          <div class="eyebrow">SAFETY OVERVIEW</div>
+          <h1 id="welcomeTitle">Welcome</h1>
+          <p class="muted">Your reports and trusted contacts, together.</p>
+        </div>
+
+        <button id="refreshBtn" class="button button-outline" type="button">
+          ↻ Refresh
+        </button>
+      </div>
+
+      <div class="notice">
+        <strong>Emergency?</strong>
+        This website does not contact emergency services automatically.
+        If you are in immediate danger, contact your local emergency number
+        or a trusted person directly.
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-icon">📋</span>
+          <span class="stat-label">My incidents</span>
+          <strong id="incidentCount">0</strong>
+        </article>
+
+        <article class="stat-card">
+          <span class="stat-icon">🟠</span>
+          <span class="stat-label">Open reports</span>
+          <strong id="openCount">0</strong>
+        </article>
+
+        <article class="stat-card">
+          <span class="stat-icon">👥</span>
+          <span class="stat-label">Trusted contacts</span>
+          <strong id="contactCount">0</strong>
+        </article>
+      </div>
+
+      <div class="content-grid">
+        
+<!-- ==========================================
+     SAFESPHERE AI - EMERGENCY ACTIONS
+========================================== -->
+
+<section class="emergency-panel">
+  <h2>🚨 Emergency Assistance</h2>
+
+  <p>
+    Use these controls to add your current location
+    or start an emergency call.
+  </p>
+
+  <div class="emergency-actions">
+    <button
+      type="button"
+      id="getLocationBtn"
+      class="button button-outline"
+    >
+      📍 Get My Location
+    </button>
+
+    <button
+      type="button"
+      id="sosBtn"
+      class="button button-danger"
+    >
+      🆘 SOS Emergency
+    </button>
+  </div>
+
+  <button id="sosButton" type="button">
+  🚨 Send SOS Alert
+</button>
+
+<p id="sosMessage" role="status"></p>
+
+<a href="tel:112" class="emergency-call-button">
+  📞 Call 112
+</a>
+
+  <p id="locationMessage" class="message"></p>
+
+  <div id="locationPreview" class="location-preview hidden">
+    <p>
+      <strong>Latitude:</strong>
+      <span id="latitudePreview">—</span>
+    </p>
+
+    <p>
+      <strong>Longitude:</strong>
+      <span id="longitudePreview">—</span>
+    </p>
+
+    <a
+      id="mapLink"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Open location in map
+    </a>
+  </div>
+
+  <p class="muted">
+    Location is requested only after you press the button.
+    Check the location before including it in a report.
+  </p>
+</section>
+        <!-- INCIDENT FORM -->
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Report an incident</h2>
+              <p class="muted">Share the details of a safety concern.</p>
+            </div>
+            <span class="panel-emoji">📝</span>
+          </div>
+
+          <form id="incidentForm" class="stack-form">
+            <label for="incidentTitle">Incident title</label>
+            <input
+              id="incidentTitle"
+              type="text"
+              minlength="3"
+              maxlength="150"
+              placeholder="e.g. Street light not working"
+              required
+            >
+
+            <label for="incidentDescription">Description</label>
+            <textarea
+              id="incidentDescription"
+              rows="4"
+              minlength="5"
+              maxlength="5000"
+              placeholder="Describe what happened or what you noticed..."
+              required
+            ></textarea>
+
+            <div class="form-row">
+              <div>
+                <label for="incidentCategory">Category</label>
+                <select id="incidentCategory">
+                  <option>Other</option>
+                  <option>Personal Safety</option>
+                  <option>Harassment</option>
+                  <option>Infrastructure</option>
+                  <option>Traffic</option>
+                  <option>Medical</option>
+                  <option>Fire</option>
+                  <option>Environmental</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="incidentSeverity">Severity</label>
+                <select id="incidentSeverity">
+                  <option>Low</option>
+                  <option selected>Medium</option>
+                  <option>High</option>
+                  <option>Critical</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="incidentLocation">Location (optional)</label>
+            <input
+              id="incidentLocation"
+              type="text"
+              maxlength="255"
+              placeholder="Area, street, landmark..."
+            >
+
+            <div class="form-row">
+              <div>
+                <label for="incidentLatitude">Latitude (optional)</label>
+                <input
+                  id="incidentLatitude"
+                  type="number"
+                  step="any"
+                  min="-90"
+                  max="90"
+                  placeholder="e.g. 22.5726"
+                >
+              </div>
+
+              <div>
+                <label for="incidentLongitude">Longitude (optional)</label>
+                <input
+                  id="incidentLongitude"
+                  type="number"
+                  step="any"
+                  min="-180"
+                  max="180"
+                  placeholder="e.g. 88.3639"
+                >
+              </div>
+            </div>
+
+            <button class="button button-primary full-width" type="submit">
+              Submit incident
+            </button>
+          </form>
+
+          <div id="incidentMessage" class="message" role="status"></div>
+        </section>
+
+        <!-- TRUSTED CONTACT FORM -->
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Trusted contacts</h2>
+              <p class="muted">Save people you may want to contact.</p>
+            </div>
+            <span class="panel-emoji">🤝</span>
+          </div>
+
+          <form id="contactForm" class="stack-form">
+            <label for="contactName">Contact name</label>
+            <input
+              id="contactName"
+              type="text"
+              minlength="2"
+              maxlength="100"
+              placeholder="Full name"
+              required
+            >
+
+            <label for="contactPhone">Phone number</label>
+            <input
+              id="contactPhone"
+              type="tel"
+              minlength="5"
+              maxlength="30"
+              placeholder="Phone number"
+              required
+            >
+
+            <label for="contactEmail">Email (optional)</label>
+            <input
+              id="contactEmail"
+              type="email"
+              placeholder="contact@example.com"
+            >
+
+            <label for="contactRelationship">Relationship (optional)</label>
+            <input
+              id="contactRelationship"
+              type="text"
+              maxlength="50"
+              placeholder="e.g. Parent, Friend"
+            >
+
+            <button class="button button-secondary full-width" type="submit">
+              Add trusted contact
+            </button>
+          </form>
+
+          <div id="contactMessage" class="message" role="status"></div>
+        </section>
+      </div>
+
+      <!-- INCIDENT LIST -->
+      <section class="panel list-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>My incident reports</h2>
+            <p class="muted">Reports saved to your account.</p>
+          </div>
+        </div>
+
+        <div id="incidentList" class="item-list">
+          <p class="muted">Log in to view your incidents.</p>
+        </div>
+      </section>
+
+      <!-- CONTACT LIST -->
+      <section class="panel list-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>My trusted contacts</h2>
+            <p class="muted">Only contacts saved to your account appear here.</p>
+          </div>
+        </div>
+
+        <div id="contactList" class="item-list">
+          <p class="muted">Log in to view your contacts.</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>SafeSphere AI · Student hackathon project</p>
+    <p>Demo only. Do not use this app as your sole emergency-response method.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
