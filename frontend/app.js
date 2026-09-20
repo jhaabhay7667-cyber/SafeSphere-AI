@@ -748,67 +748,128 @@ if (getLocationBtn) {
   });
 }
 
+
+/* ==========================================
+   SAFESPHERE AI - SOS EMAIL + SMS ALERTS
+========================================== */
+
+// This must match the ID of your SOS alert button.
+const sosButton = $("sosButton");
+const sosMessage = $("sosMessage");
+
+// Prevent multiple simultaneous SOS requests.
+let sosRequestInProgress = false;
+
 // ------------------------------------------
-// SOS EMAIL + SMS ALERTS
+// DISPLAY INDIVIDUAL CONTACT RESULTS
 // ------------------------------------------
 
-const sosButton =
-  $("sosButton") || $("sosBtn");
+function displaySOSResults(result) {
+  if (!sosMessage) return;
 
-const sosMessage =
-  $("sosMessage") || $("sosMessage");
+  const lines = [];
+
+  lines.push(result.message || "SOS request processed.");
+
+  if (Array.isArray(result.results)) {
+    result.results.forEach((contact) => {
+      lines.push("");
+      lines.push("Contact: " + (contact.contact_name || "Trusted contact"));
+
+      const email = contact.email;
+      const sms = contact.sms;
+
+      if (email) {
+        lines.push(
+          "Email: " +
+          (email.success ? "Accepted" : "Failed") +
+          " - " +
+          (email.detail || "")
+        );
+      }
+
+      if (sms) {
+        lines.push(
+          "SMS: " +
+          (sms.success ? "Accepted" : "Failed") +
+          " - " +
+          (sms.detail || "")
+        );
+      }
+    });
+  }
+
+  sosMessage.textContent = lines.join("\n");
+}
+
+// ------------------------------------------
+// SEND SOS ALERT
+// ------------------------------------------
 
 if (sosButton) {
   sosButton.addEventListener("click", async () => {
+    if (sosRequestInProgress) return;
+
+    if (!getToken()) {
+      alert("Please log in before sending an SOS alert.");
+      showAuth();
+      return;
+    }
+
     const confirmed = window.confirm(
-      "SEND EMERGENCY SOS?\n\n" +
-      "This will attempt to send email and SMS alerts " +
-      "to all your saved trusted contacts.\n\n" +
-      "Your current GPS location may be included if you allow it.\n\n" +
+      "SEND EMERGENCY SOS ALERT?\n\n" +
+      "SafeSphere AI will attempt to send email and SMS " +
+      "alerts to your saved trusted contacts.\n\n" +
+      "Your GPS location may be included if available.\n\n" +
       "Continue?"
     );
 
     if (!confirmed) return;
 
+    sosRequestInProgress = true;
     sosButton.disabled = true;
 
     if (sosMessage) {
-      sosMessage.textContent =
-        "Requesting location permission...";
-    }
-
-    let location = safeSphereLocation;
-
-    // Request location only after confirmation.
-    if (navigator.geolocation) {
-      location = await new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            });
-          },
-          () => resolve(null),
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
-        );
-      });
-    }
-
-    if (sosMessage) {
-      sosMessage.textContent =
-        "Sending SOS alerts to trusted contacts...";
+      sosMessage.textContent = "Preparing SOS alert...";
     }
 
     try {
+      let location = safeSphereLocation;
+
+      // Request fresh GPS location if available.
+      if (navigator.geolocation) {
+        if (sosMessage) {
+          sosMessage.textContent =
+            "Getting your location. Please allow permission if asked...";
+        }
+
+        location = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              });
+            },
+            () => resolve(null),
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            }
+          );
+        });
+      }
+
+      if (sosMessage) {
+        sosMessage.textContent =
+          "Sending SOS alerts to your trusted contacts...";
+      }
+
       const result = await apiRequest("/api/alerts/sos", {
         method: "POST",
         body: JSON.stringify({
-          title: "Emergency SOS",
+          title: "Emergency SOS Alert",
           message:
             "I need help. Please contact me and check my safety.",
           location_text: null,
@@ -817,42 +878,47 @@ if (sosButton) {
         })
       });
 
-      if (sosMessage) {
-        sosMessage.textContent =
+      displaySOSResults(result);
+
+      // Do not claim delivery unless delivery is confirmed.
+      if (result.success) {
+        alert(
+          "SOS request processed.\n\n" +
+          "At least one notification was accepted for sending.\n\n" +
+          "This does not confirm that the recipient received or read it."
+        );
+      } else {
+        alert(
           result.message ||
-          "SOS request processed. Check the result details.";
+          "No notification was accepted. Check the results."
+        );
       }
 
-      console.log("SOS alert results:", result);
-
-      alert(
-        (result.message || "SOS request processed.") +
-        "\n\nPlease remember: provider acceptance does not " +
-        "guarantee that the message was delivered or read."
-      );
+      console.log("SafeSphere SOS results:", result);
 
     } catch (error) {
       if (sosMessage) {
         sosMessage.textContent =
-          error.message || "Could not send SOS alerts.";
+          "SOS request failed: " + error.message;
       }
 
       alert(
-        "SOS request failed:\n\n" +
-        (error.message || "Unknown error")
+        "SOS request failed.\n\n" +
+        error.message
       );
 
     } finally {
+      sosRequestInProgress = false;
       sosButton.disabled = false;
     }
   });
+
 } else {
   console.error(
-    "SafeSphere SOS button not found. " +
-    "Add an element with id='sosButton' or id='sosBtn'."
+    "SOS alert button not found. " +
+    "Add id='sosButton' to your SOS alert button."
   );
 }
-
 // ------------------------------------------
 // OPTIONAL DIRECT EMERGENCY CALL
 // ------------------------------------------
