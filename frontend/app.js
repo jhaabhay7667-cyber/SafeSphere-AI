@@ -85,10 +85,12 @@ async function apiRequest(path, options = {}) {
       ...options,
       headers
     });
-  } catch (error) {
+    } catch (error) {
+    console.error("SafeSphere API connection error:", error);
+
     throw new Error(
-      "Cannot connect to the backend. Make sure FastAPI is running at " +
-      API_BASE
+      `Backend request failed: ${error.message}. ` +
+      `Check the browser Console and Network tab.`
     );
   }
 
