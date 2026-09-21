@@ -939,3 +939,334 @@ if (emergencyCallBtn) {
     }
   });
 }
+
+/* =========================================
+   SAFESPHERE AI - HOLD SOS + EMERGENCY MENU
+========================================= */
+
+(() => {
+  const sosButton = document.getElementById("sosButton");
+  const sosHoldText = document.getElementById("sosHoldText");
+  const sosModal = document.getElementById("sosModal");
+  const closeSosModal = document.getElementById("closeSosModal");
+  const trustedContactOptions =
+    document.getElementById("trustedContactOptions");
+  const sosMessage = document.getElementById("sosMessage");
+
+  if (!sosButton || !sosModal) {
+    console.error("SOS HTML elements were not found.");
+    return;
+  }
+
+  const HOLD_REQUIRED_MS = 3000;
+  const HOLD_MAX_MS = 5000;
+
+  let holdStartedAt = 0;
+  let holdTimer = null;
+  let holdActivated = false;
+  let pointerIsDown = false;
+
+  let currentLocation = null;
+  let trustedContacts = [];
+
+  const emergencyServices = {
+    ambulance: {
+      name: "Hospital / Ambulance",
+      phone: "108"
+    },
+    police: {
+      name: "Police Emergency",
+      phone: "112"
+    },
+    fire: {
+      name: "Fire Brigade",
+      phone: "101"
+    }
+  };
+
+  function showStatus(message) {
+    if (sosMessage) {
+      sosMessage.textContent = message;
+    }
+  }
+
+  function openModal() {
+    sosModal.classList.remove("hidden");
+  }
+
+  function closeModal() {
+    sosModal.classList.add("hidden");
+  }
+
+  closeSosModal?.addEventListener("click", closeModal);
+
+  sosModal.addEventListener("click", (event) => {
+    if (event.target === sosModal) {
+      closeModal();
+    }
+  });
+
+  // Get fresh GPS location if the user allows it.
+  function getCurrentLocation() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        () => resolve(null),
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+
+  function buildEmergencyMessage() {
+    let message =
+      "EMERGENCY SOS! I need help. Please contact me immediately.";
+
+    if (currentLocation) {
+      const lat = currentLocation.latitude;
+      const lng = currentLocation.longitude;
+
+      message +=
+        "\nMy location: https://maps.google.com/?q=" +
+        encodeURIComponent(`${lat},${lng}`);
+    } else {
+      message += "\nMy GPS location is currently unavailable.";
+    }
+
+    return message;
+  }
+
+  // Create safe text-only contact buttons.
+  function renderTrustedContacts() {
+    trustedContactOptions.innerHTML = "";
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Your Trusted Contacts";
+    trustedContactOptions.appendChild(heading);
+
+    if (!trustedContacts.length) {
+      const empty = document.createElement("p");
+      empty.textContent =
+        "No trusted contacts with phone numbers were found.";
+      trustedContactOptions.appendChild(empty);
+      return;
+    }
+
+    trustedContacts.forEach((contact) => {
+      const name =
+        contact.name ||
+        contact.contact_name ||
+        "Trusted Contact";
+
+      const phone =
+        contact.phone ||
+        contact.phone_number ||
+        "";
+
+      if (!phone) return;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "emergency-option";
+
+      const title = document.createElement("span");
+      title.textContent = "👤 " + name;
+
+      const number = document.createElement("small");
+      number.textContent = phone;
+
+      button.appendChild(title);
+      button.appendChild(number);
+
+      button.addEventListener("click", () => {
+        handleEmergencySelection(name, phone);
+      });
+
+      trustedContactOptions.appendChild(button);
+    });
+  }
+
+  async function loadTrustedContacts() {
+    trustedContactOptions.innerHTML = "";
+
+    const loading = document.createElement("p");
+    loading.textContent = "Loading your trusted contacts...";
+    trustedContactOptions.appendChild(loading);
+
+    if (typeof getToken !== "function" || !getToken()) {
+      trustedContacts = [];
+      renderTrustedContacts();
+      return;
+    }
+
+    try {
+      // This assumes your existing backend route is GET /api/contacts.
+      const result = await apiRequest("/api/contacts", {
+        method: "GET"
+      });
+
+      // Support either a plain array or { contacts: [...] }.
+      trustedContacts = Array.isArray(result)
+        ? result
+        : Array.isArray(result.contacts)
+          ? result.contacts
+          : [];
+
+      trustedContacts = trustedContacts.filter((contact) => {
+        return Boolean(
+          contact.phone ||
+          contact.phone_number
+        );
+      });
+
+      renderTrustedContacts();
+    } catch (error) {
+      console.error("Could not load trusted contacts:", error);
+
+      trustedContacts = [];
+      renderTrustedContacts();
+
+      showStatus(
+        "Could not load saved contacts. Check your login and API connection."
+      );
+    }
+  }
+
+  async function showEmergencyOptions() {
+    holdActivated = true;
+
+    sosButton.disabled = true;
+    sosHoldText.textContent = "SOS options opened";
+
+    showStatus("Preparing emergency options...");
+
+    // Try to get the user's location before building the SMS.
+    currentLocation = await getCurrentLocation();
+
+    openModal();
+
+    await loadTrustedContacts();
+
+    sosButton.disabled = false;
+    sosHoldText.textContent = "Hold for 3 seconds";
+  }
+
+  function startHold(event) {
+    if (pointerIsDown || holdActivated) return;
+
+    pointerIsDown = true;
+    holdStartedAt = Date.now();
+
+    sosButton.setPointerCapture?.(event.pointerId);
+
+    sosHoldText.textContent = "Keep holding...";
+
+    holdTimer = setTimeout(() => {
+      if (pointerIsDown) {
+        showEmergencyOptions();
+      }
+    }, HOLD_REQUIRED_MS);
+  }
+
+  function endHold() {
+    if (!pointerIsDown) return;
+
+    const heldFor = Date.now() - holdStartedAt;
+
+    pointerIsDown = false;
+    clearTimeout(holdTimer);
+
+    if (holdActivated) {
+      holdActivated = false;
+      return;
+    }
+
+    if (heldFor < HOLD_REQUIRED_MS) {
+      showStatus("SOS cancelled. Hold for at least 3 seconds.");
+    } else if (heldFor > HOLD_MAX_MS) {
+      showStatus("Hold duration exceeded. Please try again.");
+    }
+
+    sosHoldText.textContent = "Hold for 3 seconds";
+  }
+
+  sosButton.addEventListener("pointerdown", startHold);
+  sosButton.addEventListener("pointerup", endHold);
+  sosButton.addEventListener("pointercancel", endHold);
+  sosButton.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+
+  async function handleEmergencySelection(name, phone) {
+    if (!phone) {
+      showStatus("This emergency option has no phone number.");
+      return;
+    }
+
+    const message = buildEmergencyMessage();
+
+    const confirmed = window.confirm(
+      `Emergency: ${name}\n\n` +
+      `Phone: ${phone}\n\n` +
+      "Open the phone dialer to call this number?\n\n" +
+      "After the call, you can send an SMS with your location."
+    );
+
+    if (!confirmed) return;
+
+    // Open the native phone dialer. The user confirms the call.
+    window.location.href = `tel:${phone}`;
+
+    // Do not silently send SMS. Offer the SMS composer after a brief delay.
+    setTimeout(() => {
+      const sendSms = window.confirm(
+        `Prepare an emergency SMS for ${name}?\n\n` +
+        "Your messaging app will open. You must tap Send."
+      );
+
+      if (sendSms) {
+        openSmsComposer(phone, message);
+      }
+    }, 1000);
+  }
+
+  function openSmsComposer(phone, message) {
+    const smsUrl =
+      "sms:" +
+      encodeURIComponent(phone) +
+      "?body=" +
+      encodeURIComponent(message);
+
+    window.location.href = smsUrl;
+  }
+
+  // Emergency service buttons.
+  document.querySelectorAll(".emergency-option[data-type]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const type = button.dataset.type;
+        const service = emergencyServices[type];
+
+        if (!service) return;
+
+        handleEmergencySelection(
+          service.name,
+          service.phone
+        );
+      });
+    });
+
+})();

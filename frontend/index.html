@@ -237,6 +237,54 @@
     Check the location before including it in a report.
   </p>
 </section>
+
+<!-- SAFESPHERE AI SOS -->
+<section class="sos-section">
+  <h2>Emergency SOS</h2>
+  <p>Hold the button for 3 seconds to open emergency options.</p>
+
+  <button id="sosButton" type="button">
+    <span>🆘</span>
+    <strong>HOLD FOR SOS</strong>
+    <small id="sosHoldText">Hold for 3 seconds</small>
+  </button>
+
+  <div id="sosMessage" role="status" aria-live="polite"></div>
+</section>
+
+<!-- EMERGENCY OPTIONS -->
+<div id="sosModal" class="sos-modal hidden">
+  <div class="sos-modal-content">
+    <button id="closeSosModal" class="sos-close" type="button">
+      ✕
+    </button>
+
+    <h2>Choose Emergency Help</h2>
+    <p>Select where you need help.</p>
+
+    <button class="emergency-option" data-type="ambulance">
+      🚑 Hospital / Ambulance
+      <small>Call 108</small>
+    </button>
+
+    <button class="emergency-option" data-type="police">
+      🚔 Police Emergency
+      <small>Call 112</small>
+    </button>
+
+    <button class="emergency-option" data-type="fire">
+      🚒 Fire Brigade
+      <small>Call 101</small>
+    </button>
+
+    <div id="trustedContactOptions"></div>
+
+    <p class="sos-note">
+      Calls open your phone dialer. SMS opens your messaging app;
+      you must tap Send. Location is included only if available.
+    </p>
+  </div>
+</div>
         <!-- INCIDENT FORM -->
         <section class="panel">
           <div class="panel-heading">
