@@ -3,7 +3,7 @@
 // ======================================================
 
 // If your backend uses a different port, change this URL.
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://safesphere-ai-qg3h.onrender.com";
 
 // Demo convenience: token is stored in this browser tab's
 // sessionStorage and removed when the tab session ends.
