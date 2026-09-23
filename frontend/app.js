@@ -1303,77 +1303,42 @@ if (getLocationBtn) {
   );
 }
 
-
 // ======================================================
-// SAFESPHERE AI
-// HOLD SOS + EMERGENCY MENU
+// SAFESPHERE AI - HOLD SOS + EMERGENCY MENU
 // ======================================================
 
 (() => {
+  const sosButton = $("sosButton");
+  const sosHoldText = $("sosHoldText");
+  const sosModal = $("sosModal");
+  const closeSosModal = $("closeSosModal");
+  const trustedContactOptions = $("trustedContactOptions");
+  const sosMessage = $("sosMessage");
 
-  const sosButton =
-    $("sosButton");
-
-  const sosHoldText =
-    $("sosHoldText");
-
-  const sosModal =
-    $("sosModal");
-
-  const closeSosModal =
-    $("closeSosModal");
-
-  const trustedContactOptions =
-    $("trustedContactOptions");
-
-  const sosMessage =
-    $("sosMessage");
-
-
-  // ----------------------------------------------------
-  // CHECK REQUIRED HTML
-  // ----------------------------------------------------
-
-  if (
-    !sosButton ||
-    !sosModal
-  ) {
-
-    console.warn(
-      "SafeSphere SOS elements were not found. " +
-      "Make sure your index.html contains the SOS HTML."
-    );
-
+  if (!sosButton || !sosModal) {
+    console.warn("SafeSphere SOS elements were not found.");
     return;
   }
 
-
-  // ----------------------------------------------------
-  // SETTINGS
-  // ----------------------------------------------------
+  // ====================================================
+  // SOS SETTINGS
+  // ====================================================
 
   const HOLD_REQUIRED_MS = 3000;
 
   let holdStartedAt = 0;
-
   let holdTimer = null;
-
   let pointerIsDown = false;
-
-  let emergencyMenuOpened =
-    false;
+  let emergencyMenuOpened = false;
 
   let currentLocation = null;
-
   let trustedContacts = [];
 
-
-  // ----------------------------------------------------
+  // ====================================================
   // EMERGENCY SERVICES
-  // ----------------------------------------------------
+  // ====================================================
 
   const emergencyServices = {
-
     ambulance: {
       name: "Hospital / Ambulance",
       phone: "108"
@@ -1388,359 +1353,159 @@ if (getLocationBtn) {
       name: "Fire Brigade",
       phone: "101"
     }
-
   };
 
+  // ====================================================
+  // SHOW SOS MESSAGE
+  // ====================================================
 
-  // ----------------------------------------------------
-  // STATUS
-  // ----------------------------------------------------
+  function showSOSStatus(message, type = "") {
+    if (!sosMessage) return;
 
-  function showSOSStatus(message) {
+    sosMessage.textContent = message;
 
-    if (sosMessage) {
-      sosMessage.textContent =
-        message;
-    }
+    sosMessage.className = type
+      ? `message ${type}`
+      : "message";
   }
 
-
-  // ----------------------------------------------------
-  // OPEN MODAL
-  // ----------------------------------------------------
+  // ====================================================
+  // OPEN SOS MODAL
+  // ====================================================
 
   function openSOSModal() {
-
-    sosModal
-      .classList
-      .remove("hidden");
+    sosModal.classList.remove("hidden");
   }
 
-
-  // ----------------------------------------------------
-  // CLOSE MODAL
-  // ----------------------------------------------------
+  // ====================================================
+  // CLOSE SOS MODAL
+  // ====================================================
 
   function closeSOSModal() {
+    sosModal.classList.add("hidden");
 
-    sosModal
-      .classList
-      .add("hidden");
-
-    emergencyMenuOpened =
-      false;
+    emergencyMenuOpened = false;
 
     if (sosHoldText) {
-      sosHoldText.textContent =
-        "Hold for 3 seconds";
+      sosHoldText.textContent = "Hold for 3 seconds";
     }
   }
 
+  // ====================================================
+  // CLOSE BUTTON
+  // ====================================================
 
   closeSosModal?.addEventListener(
     "click",
     closeSOSModal
   );
 
-
-  // ----------------------------------------------------
-  // CLICK OUTSIDE MODAL
-  // ----------------------------------------------------
+  // ====================================================
+  // CLOSE WHEN CLICKING OUTSIDE MODAL
+  // ====================================================
 
   sosModal.addEventListener(
     "click",
     (event) => {
-
-      if (
-        event.target ===
-        sosModal
-      ) {
-
+      if (event.target === sosModal) {
         closeSOSModal();
       }
     }
   );
 
-
-  // ----------------------------------------------------
-  // GET FRESH LOCATION
-  // ----------------------------------------------------
+  // ====================================================
+  // GET FRESH GPS LOCATION
+  // ====================================================
 
   function getCurrentLocation() {
+    return new Promise((resolve) => {
 
-    return new Promise(
-      (resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
 
-        if (
-          !navigator.geolocation
-        ) {
+      navigator.geolocation.getCurrentPosition(
+
+        (position) => {
+
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+
+        },
+
+        (error) => {
+
+          console.warn(
+            "Could not get GPS location:",
+            error
+          );
 
           resolve(null);
-          return;
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
 
-        navigator.geolocation.getCurrentPosition(
+      );
+    });
+  }
 
-          (position) => {
+  // ====================================================
+  // CREATE LOCATION TEXT
+  // ====================================================
 
-            resolve({
-              latitude:
-                position.coords.latitude,
+  function getLocationText() {
 
-              longitude:
-                position.coords.longitude
-            });
-          },
+    if (!currentLocation) {
+      return null;
+    }
 
-          () => {
-
-            resolve(null);
-          },
-
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
-        );
-      }
+    return (
+      `GPS: ` +
+      `${currentLocation.latitude.toFixed(6)}, ` +
+      `${currentLocation.longitude.toFixed(6)}`
     );
   }
 
-
-  // ----------------------------------------------------
-  // BUILD EMERGENCY SMS
-  // ----------------------------------------------------
-
-  function buildEmergencyMessage() {
-
-    let message =
-      "EMERGENCY SOS! I need help. Please contact me immediately.";
-
-    if (currentLocation) {
-
-      const lat =
-        currentLocation.latitude;
-
-      const lng =
-        currentLocation.longitude;
-
-      message +=
-        "\nMy location: " +
-        "https://maps.google.com/?q=" +
-        encodeURIComponent(
-          `${lat},${lng}`
-        );
-
-    } else {
-
-      message +=
-        "\nMy GPS location is currently unavailable.";
-    }
-
-    return message;
-  }
-
-
-  // ----------------------------------------------------
-  // RENDER TRUSTED CONTACTS
-  // ----------------------------------------------------
-
-  function renderTrustedContacts() {
-
-    if (
-      !trustedContactOptions
-    ) {
-      return;
-    }
-
-    trustedContactOptions.innerHTML =
-      "";
-
-    const heading =
-      document.createElement(
-        "h3"
-      );
-
-    heading.textContent =
-      "Your Trusted Contacts";
-
-    trustedContactOptions
-      .appendChild(
-        heading
-      );
-
-
-    if (
-      !trustedContacts.length
-    ) {
-
-      const empty =
-        document.createElement(
-          "p"
-        );
-
-      empty.textContent =
-        "No trusted contacts with phone numbers were found.";
-
-      trustedContactOptions
-        .appendChild(
-          empty
-        );
-
-      return;
-    }
-
-
-    trustedContacts.forEach(
-      (contact) => {
-
-        const name =
-          contact.name ||
-          contact.contact_name ||
-          "Trusted Contact";
-
-        const phone =
-          contact.phone ||
-          contact.phone_number ||
-          "";
-
-        if (!phone) {
-          return;
-        }
-
-
-        const button =
-          document.createElement(
-            "button"
-          );
-
-        button.type =
-          "button";
-
-        button.className =
-          "emergency-option";
-
-
-        const title =
-          document.createElement(
-            "span"
-          );
-
-        title.textContent =
-          "👤 " + name;
-
-
-        const number =
-          document.createElement(
-            "small"
-          );
-
-        number.textContent =
-          phone;
-
-
-        button.appendChild(
-          title
-        );
-
-        button.appendChild(
-          number
-        );
-
-
-        button.addEventListener(
-          "click",
-          () => {
-
-            handleEmergencySelection(
-              name,
-              phone
-            );
-          }
-        );
-
-
-        trustedContactOptions
-          .appendChild(
-            button
-          );
-      }
-    );
-  }
-
-
-  // ----------------------------------------------------
+  // ====================================================
   // LOAD TRUSTED CONTACTS
-  // ----------------------------------------------------
+  // ====================================================
 
   async function loadTrustedContacts() {
 
-    if (
-      !trustedContactOptions
-    ) {
+    if (!trustedContactOptions) {
       return;
     }
 
     trustedContactOptions.innerHTML =
-      "";
+      '<p class="muted">Loading your trusted contacts...</p>';
 
-    const loading =
-      document.createElement(
-        "p"
-      );
+    if (!getToken()) {
 
-    loading.textContent =
-      "Loading your trusted contacts...";
-
-    trustedContactOptions
-      .appendChild(
-        loading
-      );
-
-
-    if (
-      !getToken()
-    ) {
-
-      trustedContacts =
-        [];
+      trustedContacts = [];
 
       renderTrustedContacts();
 
       return;
     }
 
-
     try {
 
       const result =
-        await apiRequest(
-          "/api/contacts"
-        );
-
+        await apiRequest("/api/contacts");
 
       trustedContacts =
         Array.isArray(result)
           ? result
-          : Array.isArray(
-              result?.contacts
-            )
-              ? result.contacts
-              : [];
-
-
-      trustedContacts =
-        trustedContacts.filter(
-          (contact) => {
-
-            return Boolean(
-              contact.phone ||
-              contact.phone_number
-            );
-          }
-        );
-
+          : Array.isArray(result?.contacts)
+            ? result.contacts
+            : [];
 
       renderTrustedContacts();
 
@@ -1751,78 +1516,653 @@ if (getLocationBtn) {
         error
       );
 
-      trustedContacts =
-        [];
+      trustedContacts = [];
 
       renderTrustedContacts();
 
       showSOSStatus(
-        "Could not load saved contacts. Check your login and API connection."
+        "Could not load saved contacts. " +
+        "Check your login and API connection.",
+        "error"
       );
     }
   }
 
+  // ====================================================
+  // DISPLAY TRUSTED CONTACTS
+  // ====================================================
 
-  // ----------------------------------------------------
-  // OPEN EMERGENCY OPTIONS
-  // ----------------------------------------------------
+  function renderTrustedContacts() {
+
+    if (!trustedContactOptions) {
+      return;
+    }
+
+    trustedContactOptions.innerHTML = "";
+
+    const heading =
+      document.createElement("h3");
+
+    heading.textContent =
+      "Your Trusted Contacts";
+
+    trustedContactOptions.appendChild(
+      heading
+    );
+
+    // --------------------------------------------------
+    // IMPORTANT:
+    // CONTACT IS VALID IF IT HAS EMAIL OR PHONE
+    // --------------------------------------------------
+
+    const usableContacts =
+      trustedContacts.filter((contact) => {
+
+        const phone =
+          contact.phone ||
+          contact.phone_number ||
+          "";
+
+        const email =
+          contact.email ||
+          "";
+
+        return Boolean(phone || email);
+      });
+
+    if (!usableContacts.length) {
+
+      const empty =
+        document.createElement("p");
+
+      empty.textContent =
+        "No trusted contacts with an email address " +
+        "or phone number were found.";
+
+      trustedContactOptions.appendChild(
+        empty
+      );
+
+      return;
+    }
+
+    // --------------------------------------------------
+    // CREATE CONTACT BUTTONS
+    // --------------------------------------------------
+
+    usableContacts.forEach((contact) => {
+
+      const name =
+        contact.name ||
+        contact.contact_name ||
+        "Trusted Contact";
+
+      const phone =
+        contact.phone ||
+        contact.phone_number ||
+        "";
+
+      const email =
+        contact.email ||
+        "";
+
+      const button =
+        document.createElement("button");
+
+      button.type = "button";
+
+      button.className =
+        "emergency-option";
+
+      button.dataset.contactId =
+        String(contact.id);
+
+      // ------------------------------------------------
+      // CONTACT NAME
+      // ------------------------------------------------
+
+      const title =
+        document.createElement("span");
+
+      title.textContent =
+        `👤 ${name}`;
+
+      // ------------------------------------------------
+      // AVAILABLE METHODS
+      // ------------------------------------------------
+
+      const details =
+        document.createElement("small");
+
+      const methods = [];
+
+      if (email) {
+        methods.push("Email");
+      }
+
+      if (phone) {
+        methods.push("SMS");
+      }
+
+      if (phone) {
+        methods.push("Call");
+      }
+
+      details.textContent =
+        methods.join(" + ");
+
+      button.appendChild(title);
+      button.appendChild(details);
+
+      // ------------------------------------------------
+      // CONTACT CLICK
+      // ------------------------------------------------
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          handleTrustedContactSelection(
+            contact
+          );
+
+        }
+      );
+
+      trustedContactOptions.appendChild(
+        button
+      );
+    });
+  }
+
+  // ====================================================
+  // SHOW EMERGENCY OPTIONS
+  // ====================================================
 
   async function showEmergencyOptions() {
 
-    emergencyMenuOpened =
-      true;
+    emergencyMenuOpened = true;
 
     if (sosHoldText) {
 
       sosHoldText.textContent =
-        "Loading emergency options...";
+        "Choose emergency option";
+
     }
 
+    // --------------------------------------------------
+    // GET FRESH GPS
+    // --------------------------------------------------
+
     showSOSStatus(
-      "Getting your location..."
+      "Getting your current location..."
     );
 
-
-    // Get fresh GPS
     currentLocation =
       await getCurrentLocation();
-
 
     if (currentLocation) {
 
       showSOSStatus(
-        "Location obtained. Choose an emergency option."
+        "Location obtained. " +
+        "Choose an emergency option."
       );
 
     } else {
 
       showSOSStatus(
-        "GPS unavailable. You can still choose an emergency option."
+        "GPS unavailable. " +
+        "You can still choose an emergency option."
       );
+
     }
 
+    // --------------------------------------------------
+    // OPEN MODAL
+    // --------------------------------------------------
 
     openSOSModal();
 
+    // --------------------------------------------------
+    // LOAD CONTACTS
+    // --------------------------------------------------
 
-    // Load saved contacts
     await loadTrustedContacts();
-
 
     if (sosHoldText) {
 
       sosHoldText.textContent =
         "Hold for 3 seconds";
+
     }
   }
 
+  // ====================================================
+  // SEND SOS TO BACKEND
+  // ====================================================
 
-  // ----------------------------------------------------
-  // START SOS HOLD
-  // ----------------------------------------------------
+  async function sendSOSRequest({
+
+    contactId = null,
+
+    emergencyName = null,
+
+    emergencyPhone = null,
+
+    title = "SOS Emergency Alert",
+
+    category = "Emergency",
+
+    description =
+      "Emergency assistance requested.",
+
+    severity = "High"
+
+  } = {}) {
+
+    const payload = {
+
+      title,
+
+      description,
+
+      category,
+
+      severity,
+
+      location:
+        getLocationText(),
+
+      latitude:
+        currentLocation?.latitude ?? null,
+
+      longitude:
+        currentLocation?.longitude ?? null,
+
+      contact_id:
+        contactId,
+
+      emergency_name:
+        emergencyName,
+
+      emergency_phone:
+        emergencyPhone
+
+    };
+
+    showSOSStatus(
+      "Sending the full incident report..."
+    );
+
+    return await apiRequest(
+      "/api/alerts/sos",
+      {
+        method: "POST",
+
+        body:
+          JSON.stringify(payload)
+      }
+    );
+  }
+
+  // ====================================================
+  // OPEN PHONE DIALER
+  // ====================================================
+
+  function openPhoneDialer(phone) {
+
+    if (!phone) {
+      return;
+    }
+
+    const cleanPhone =
+      String(phone)
+        .trim()
+        .replace(/\s+/g, "");
+
+    window.location.href =
+      `tel:${cleanPhone}`;
+  }
+
+  // ====================================================
+  // TRUSTED CONTACT SOS
+  // ====================================================
+
+  async function handleTrustedContactSelection(
+    contact
+  ) {
+
+    const contactId =
+      contact?.id;
+
+    const name =
+      contact?.name ||
+      contact?.contact_name ||
+      "Trusted Contact";
+
+    const phone =
+      contact?.phone ||
+      contact?.phone_number ||
+      null;
+
+    const email =
+      contact?.email ||
+      null;
+
+    // --------------------------------------------------
+    // VALIDATE CONTACT ID
+    // --------------------------------------------------
+
+    if (!contactId) {
+
+      showSOSStatus(
+        "This trusted contact has an invalid contact ID.",
+        "error"
+      );
+
+      return;
+    }
+
+    // --------------------------------------------------
+    // VALIDATE CONTACT DETAILS
+    // --------------------------------------------------
+
+    if (!phone && !email) {
+
+      showSOSStatus(
+        "This trusted contact has no email address " +
+        "or phone number.",
+        "error"
+      );
+
+      return;
+    }
+
+    // --------------------------------------------------
+    // AVAILABLE DELIVERY METHODS
+    // --------------------------------------------------
+
+    const methods = [];
+
+    if (email) {
+      methods.push("email");
+    }
+
+    if (phone) {
+      methods.push("SMS");
+    }
+
+    if (phone) {
+      methods.push("call");
+    }
+
+    // --------------------------------------------------
+    // CONFIRM
+    // --------------------------------------------------
+
+    const confirmed =
+      window.confirm(
+
+        `Trusted Contact: ${name}\n\n` +
+
+        `Notification: ${methods.join(" + ")}\n\n` +
+
+        "SafeSphere will send the full incident " +
+        "report now."
+
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+
+      // ------------------------------------------------
+      // SEND FULL REPORT
+      // ------------------------------------------------
+
+      const result =
+        await sendSOSRequest({
+
+          contactId,
+
+          emergencyName:
+            "Trusted Contact",
+
+          emergencyPhone:
+            phone
+
+        });
+
+      // ------------------------------------------------
+      // CHECK RESULT
+      // ------------------------------------------------
+
+      if (!result?.success) {
+
+        showSOSStatus(
+
+          result?.message ||
+          "The emergency notification " +
+          "could not be sent.",
+
+          "error"
+
+        );
+
+        return;
+      }
+
+      // ------------------------------------------------
+      // DELIVERY COUNTS
+      // ------------------------------------------------
+
+      const emailCount =
+        Number(
+          result.email_success_count || 0
+        );
+
+      const smsCount =
+        Number(
+          result.sms_success_count || 0
+        );
+
+      const status = [];
+
+      if (emailCount > 0) {
+        status.push("email sent");
+      }
+
+      if (smsCount > 0) {
+        status.push("SMS accepted");
+      }
+
+      if (phone) {
+        status.push("opening call");
+      }
+
+      // ------------------------------------------------
+      // SUCCESS MESSAGE
+      // ------------------------------------------------
+
+      showSOSStatus(
+
+        `Emergency report sent to ${name}. ` +
+        `${status.join(", ")}.`,
+
+        "success"
+
+      );
+
+      // ------------------------------------------------
+      // CLOSE MODAL
+      // ------------------------------------------------
+
+      closeSOSModal();
+
+      // ------------------------------------------------
+      // OPEN CALL
+      // ------------------------------------------------
+
+      if (phone) {
+
+        setTimeout(
+          () => openPhoneDialer(phone),
+          300
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Trusted contact SOS failed:",
+        error
+      );
+
+      showSOSStatus(
+        `SOS failed: ${error.message}`,
+        "error"
+      );
+    }
+  }
+
+  // ====================================================
+  // EMERGENCY SERVICE SOS
+  // ====================================================
+
+  async function handleEmergencyServiceSelection(
+    service
+  ) {
+
+    if (!service?.phone) {
+
+      showSOSStatus(
+        "Emergency service phone number is missing.",
+        "error"
+      );
+
+      return;
+    }
+
+    // --------------------------------------------------
+    // CONFIRM EMERGENCY CALL
+    // --------------------------------------------------
+
+    const confirmed =
+      window.confirm(
+
+        `${service.name}\n\n` +
+
+        `Phone: ${service.phone}\n\n` +
+
+        "SafeSphere will send the full incident " +
+        "report to your trusted contacts and then " +
+        "open the phone dialer."
+
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+
+      // ------------------------------------------------
+      // SEND FULL REPORT
+      // ------------------------------------------------
+
+      const result =
+        await sendSOSRequest({
+
+          contactId: null,
+
+          emergencyName:
+            service.name,
+
+          emergencyPhone:
+            service.phone,
+
+          title:
+            `SOS - ${service.name}`,
+
+          category:
+            "Emergency Service",
+
+          description:
+            `Emergency assistance requested ` +
+            `from ${service.name}.`,
+
+          severity:
+            "Critical"
+
+        });
+
+      // ------------------------------------------------
+      // CHECK RESULT
+      // ------------------------------------------------
+
+      if (!result?.success) {
+
+        showSOSStatus(
+
+          result?.message ||
+          "The emergency report " +
+          "could not be sent.",
+
+          "error"
+
+        );
+
+        return;
+      }
+
+      // ------------------------------------------------
+      // SUCCESS
+      // ------------------------------------------------
+
+      showSOSStatus(
+
+        `Full incident report sent. ` +
+        `Opening ${service.name} dialer...`,
+
+        "success"
+
+      );
+
+      closeSOSModal();
+
+      // ------------------------------------------------
+      // OPEN EMERGENCY CALL
+      // ------------------------------------------------
+
+      setTimeout(
+        () => openPhoneDialer(service.phone),
+        300
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Emergency service SOS failed:",
+        error
+      );
+
+      showSOSStatus(
+        `SOS failed: ${error.message}`,
+        "error"
+      );
+    }
+  }
+
+  // ====================================================
+  // START 3 SECOND HOLD
+  // ====================================================
 
   function startHold(event) {
 
+    // Already holding
     if (
       pointerIsDown ||
       emergencyMenuOpened
@@ -1830,8 +2170,7 @@ if (getLocationBtn) {
       return;
     }
 
-
-    // Only primary mouse button
+    // Ignore right mouse button
     if (
       event.pointerType === "mouse" &&
       event.button !== 0
@@ -1839,13 +2178,14 @@ if (getLocationBtn) {
       return;
     }
 
-
-    pointerIsDown =
-      true;
+    pointerIsDown = true;
 
     holdStartedAt =
       Date.now();
 
+    // --------------------------------------------------
+    // POINTER CAPTURE
+    // --------------------------------------------------
 
     try {
 
@@ -1853,59 +2193,70 @@ if (getLocationBtn) {
         event.pointerId
       );
 
-    } catch {
-      // Ignore pointer capture errors
+    } catch (error) {
+
+      console.warn(
+        "Pointer capture unavailable:",
+        error
+      );
     }
 
+    // --------------------------------------------------
+    // UI
+    // --------------------------------------------------
 
     if (sosHoldText) {
 
       sosHoldText.textContent =
         "Keep holding...";
+
     }
 
-
     showSOSStatus(
-      "Keep holding the SOS button..."
+      "Keep holding the SOS button for 3 seconds..."
     );
 
+    // --------------------------------------------------
+    // 3 SECOND TIMER
+    // --------------------------------------------------
 
     holdTimer =
       setTimeout(
         () => {
 
-          if (
-            pointerIsDown
-          ) {
-
-            showEmergencyOptions();
+          if (!pointerIsDown) {
+            return;
           }
+
+          pointerIsDown = false;
+
+          holdTimer = null;
+
+          showEmergencyOptions();
 
         },
         HOLD_REQUIRED_MS
       );
   }
 
-
-  // ----------------------------------------------------
+  // ====================================================
   // END SOS HOLD
-  // ----------------------------------------------------
+  // ====================================================
 
-  function endHold(event) {
+  function endHold() {
 
     if (!pointerIsDown) {
       return;
     }
 
-
     const heldFor =
-      Date.now() -
-      holdStartedAt;
+      Date.now() - holdStartedAt;
 
+    pointerIsDown = false;
 
-    pointerIsDown =
-      false;
-
+    // --------------------------------------------------
+    // CLEAR TIMER
+    // --------------------------------------------------
 
     if (holdTimer) {
 
@@ -1913,49 +2264,38 @@ if (getLocationBtn) {
         holdTimer
       );
 
-      holdTimer =
-        null;
+      holdTimer = null;
     }
 
-
-    // If emergency menu already opened,
-    // don't treat pointer release as cancellation.
-    if (
-      emergencyMenuOpened
-    ) {
-
+    if (emergencyMenuOpened) {
       return;
     }
 
+    // --------------------------------------------------
+    // TOO SHORT
+    // --------------------------------------------------
 
-    if (
-      heldFor <
-      HOLD_REQUIRED_MS
-    ) {
+    showSOSStatus(
 
-      showSOSStatus(
-        "SOS cancelled. Hold for at least 3 seconds."
-      );
+      heldFor < HOLD_REQUIRED_MS
 
-    } else {
+        ? "SOS cancelled. Hold the button for 3 seconds."
 
-      showSOSStatus(
-        "Please wait..."
-      );
-    }
+        : "Preparing emergency options..."
 
+    );
 
     if (sosHoldText) {
 
       sosHoldText.textContent =
         "Hold for 3 seconds";
+
     }
   }
 
-
-  // ----------------------------------------------------
-  // SOS POINTER EVENTS
-  // ----------------------------------------------------
+  // ====================================================
+  // SOS BUTTON EVENTS
+  // ====================================================
 
   sosButton.addEventListener(
     "pointerdown",
@@ -1976,18 +2316,15 @@ if (getLocationBtn) {
     "pointerleave",
     (event) => {
 
-      // For touch devices pointerleave can
-      // behave differently, so don't cancel
-      // automatically there.
       if (
         event.pointerType === "mouse"
       ) {
 
-        endHold(event);
+        endHold();
+
       }
     }
   );
-
 
   // ----------------------------------------------------
   // PREVENT RIGHT CLICK
@@ -1998,12 +2335,12 @@ if (getLocationBtn) {
     (event) => {
 
       event.preventDefault();
+
     }
   );
 
-
   // ----------------------------------------------------
-  // PREVENT DOUBLE TAP ZOOM / SELECTION
+  // MOBILE TOUCH
   // ----------------------------------------------------
 
   sosButton.style.touchAction =
@@ -2012,181 +2349,66 @@ if (getLocationBtn) {
   sosButton.style.userSelect =
     "none";
 
-
-  // ----------------------------------------------------
-  // OPEN SMS COMPOSER
-  // ----------------------------------------------------
-
-  function openSmsComposer(
-    phone,
-    message
-  ) {
-
-    const smsUrl =
-      "sms:" +
-      encodeURIComponent(phone) +
-      "?body=" +
-      encodeURIComponent(message);
-
-
-    window.location.href =
-      smsUrl;
-  }
-
-
-  // ----------------------------------------------------
-  // EMERGENCY SELECTION
-  // ----------------------------------------------------
-
-  async function handleEmergencySelection(
-    name,
-    phone
-  ) {
-
-    if (!phone) {
-
-      showSOSStatus(
-        "This emergency option has no phone number."
-      );
-
-      return;
-    }
-
-
-    const message =
-      buildEmergencyMessage();
-
-
-    const confirmed =
-      window.confirm(
-
-        `Emergency: ${name}\n\n` +
-
-        `Phone: ${phone}\n\n` +
-
-        "Open your phone dialer to call this number?\n\n" +
-
-        "You must press the call button yourself."
-      );
-
-
-    if (!confirmed) {
-      return;
-    }
-
-
-    // ----------------------------------------------
-    // OPEN PHONE DIALER
-    // ----------------------------------------------
-
-    showSOSStatus(
-      `Opening phone dialer for ${name}...`
-    );
-
-
-    window.location.href =
-      `tel:${phone}`;
-
-
-    // ----------------------------------------------
-    // IMPORTANT:
-    // Do NOT automatically send SMS here.
-    //
-    // The browser may leave the page when the
-    // phone dialer opens.
-    //
-    // Therefore, SMS is offered when the user
-    // returns to the app.
-    // ----------------------------------------------
-
-    setTimeout(
-      () => {
-
-        const sendSms =
-          window.confirm(
-
-            `Prepare an emergency SMS for ${name}?\n\n` +
-
-            "Your messaging app will open with the emergency message and location.\n\n" +
-
-            "You must tap Send yourself."
-          );
-
-
-        if (sendSms) {
-
-          openSmsComposer(
-            phone,
-            message
-          );
-        }
-
-      },
-      1500
-    );
-  }
-
-
-  // ----------------------------------------------------
+  // ====================================================
   // EMERGENCY SERVICE BUTTONS
-  // ----------------------------------------------------
+  // ====================================================
 
   document
     .querySelectorAll(
       ".emergency-option[data-type]"
     )
-    .forEach(
-      (button) => {
+    .forEach((button) => {
 
-        button.addEventListener(
-          "click",
-          () => {
+      button.addEventListener(
+        "click",
+        () => {
 
-            const type =
-              button.dataset.type;
+          const service =
+            emergencyServices[
+              button.dataset.type
+            ];
 
-            const service =
-              emergencyServices[type];
+          if (!service) {
 
-
-            if (!service) {
-
-              console.error(
-                "Unknown emergency service:",
-                type
-              );
-
-              return;
-            }
-
-
-            handleEmergencySelection(
-              service.name,
-              service.phone
+            console.error(
+              "Unknown emergency service:",
+              button.dataset.type
             );
+
+            return;
           }
-        );
-      }
-    );
 
+          handleEmergencyServiceSelection(
+            service
+          );
 
-  // ----------------------------------------------------
-  // ESCAPE KEY CLOSES MODAL
-  // ----------------------------------------------------
+        }
+      );
+
+    });
+
+  // ====================================================
+  // ESC KEY CLOSE
+  // ====================================================
 
   document.addEventListener(
     "keydown",
     (event) => {
 
       if (
+
         event.key === "Escape" &&
+
         !sosModal.classList.contains(
           "hidden"
         )
+
       ) {
 
         closeSOSModal();
+
       }
+
     }
   );
 
