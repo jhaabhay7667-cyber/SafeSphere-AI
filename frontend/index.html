@@ -4,62 +4,140 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b1220">
+
   <title>SafeSphere AI | Safety Dashboard</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+
+  <!-- ======================================================
+       TOP BAR
+  ======================================================= -->
   <header class="topbar">
+
     <a class="brand" href="#">
       <span class="brand-icon">🛡️</span>
       <span>SafeSphere <strong>AI</strong></span>
     </a>
 
     <div class="topbar-right">
-      <span id="userLabel" class="user-label">Not signed in</span>
-      <button id="logoutBtn" class="button button-outline hidden" type="button">
+
+      <span id="userLabel" class="user-label">
+        Not signed in
+      </span>
+
+      <button
+        id="logoutBtn"
+        class="button button-outline hidden"
+        type="button"
+      >
         Logout
       </button>
+
     </div>
+
   </header>
 
+
+  <!-- ======================================================
+       MAIN PAGE
+  ======================================================= -->
   <main class="page">
-    <!-- AUTH SECTION -->
+
+
+    <!-- ====================================================
+         AUTH SECTION
+    ===================================================== -->
     <section id="authSection" class="auth-layout">
+
+      <!-- LEFT HERO -->
       <div class="hero-panel">
-        <div class="eyebrow">YOUR PERSONAL SAFETY SPACE</div>
-        <h1>Safety starts with being <span>prepared.</span></h1>
+
+        <div class="eyebrow">
+          YOUR PERSONAL SAFETY SPACE
+        </div>
+
+        <h1>
+          Safety starts with being
+          <span>prepared.</span>
+        </h1>
+
         <p>
-          Report incidents, keep trusted contacts close, and organize
-          your safety information in one place.
+          Report incidents, keep trusted contacts close,
+          and organize your safety information in one place.
         </p>
 
         <div class="hero-points">
-          <div><span>✓</span> Incident reporting</div>
-          <div><span>✓</span> Personal safety contacts</div>
-          <div><span>✓</span> Secure account-based dashboard</div>
+
+          <div>
+            <span>✓</span>
+            Incident reporting
+          </div>
+
+          <div>
+            <span>✓</span>
+            Personal safety contacts
+          </div>
+
+          <div>
+            <span>✓</span>
+            Secure account-based dashboard
+          </div>
+
         </div>
 
         <p class="small-note">
           Demo application — not a replacement for emergency services.
         </p>
+
       </div>
 
+
+      <!-- LOGIN / REGISTER CARD -->
       <div class="auth-card">
+
         <div class="auth-tabs">
-          <button id="showLoginBtn" class="tab active" type="button">
+
+          <button
+            id="showLoginBtn"
+            class="tab active"
+            type="button"
+          >
             Login
           </button>
-          <button id="showRegisterBtn" class="tab" type="button">
+
+          <button
+            id="showRegisterBtn"
+            class="tab"
+            type="button"
+          >
             Register
           </button>
+
         </div>
 
-        <form id="loginForm" class="auth-form">
-          <h2>Welcome back</h2>
-          <p class="muted">Log in to your SafeSphere account.</p>
 
-          <label for="loginEmail">Email address</label>
+        <!-- LOGIN FORM -->
+        <form
+          id="loginForm"
+          class="auth-form"
+        >
+
+          <h2>
+            Welcome back
+          </h2>
+
+          <p class="muted">
+            Log in to your SafeSphere account.
+          </p>
+
+
+          <label for="loginEmail">
+            Email address
+          </label>
+
           <input
             id="loginEmail"
             type="email"
@@ -68,7 +146,11 @@
             required
           >
 
-          <label for="loginPassword">Password</label>
+
+          <label for="loginPassword">
+            Password
+          </label>
+
           <input
             id="loginPassword"
             type="password"
@@ -77,16 +159,36 @@
             required
           >
 
-          <button class="button button-primary full-width" type="submit">
+
+          <button
+            class="button button-primary full-width"
+            type="submit"
+          >
             Login
           </button>
+
         </form>
 
-        <form id="registerForm" class="auth-form hidden">
-          <h2>Create account</h2>
-          <p class="muted">Get started with your safety dashboard.</p>
 
-          <label for="registerName">Full name</label>
+        <!-- REGISTER FORM -->
+        <form
+          id="registerForm"
+          class="auth-form hidden"
+        >
+
+          <h2>
+            Create account
+          </h2>
+
+          <p class="muted">
+            Get started with your safety dashboard.
+          </p>
+
+
+          <label for="registerName">
+            Full name
+          </label>
+
           <input
             id="registerName"
             type="text"
@@ -97,7 +199,11 @@
             required
           >
 
-          <label for="registerEmail">Email address</label>
+
+          <label for="registerEmail">
+            Email address
+          </label>
+
           <input
             id="registerEmail"
             type="email"
@@ -106,7 +212,11 @@
             required
           >
 
-          <label for="registerPassword">Password</label>
+
+          <label for="registerPassword">
+            Password
+          </label>
+
           <input
             id="registerPassword"
             type="password"
@@ -117,186 +227,462 @@
             required
           >
 
-          <button class="button button-primary full-width" type="submit">
+
+          <button
+            class="button button-primary full-width"
+            type="submit"
+          >
             Create account
           </button>
+
         </form>
 
-        <div id="authMessage" class="message" role="status"></div>
+
+        <div
+          id="authMessage"
+          class="message"
+          role="status"
+        ></div>
+
       </div>
+
     </section>
 
-    <!-- DASHBOARD SECTION -->
-    <section id="dashboardSection" class="hidden">
+
+
+    <!-- ====================================================
+         DASHBOARD
+    ===================================================== -->
+    <section
+      id="dashboardSection"
+      class="hidden"
+    >
+
+
+      <!-- DASHBOARD HEADER -->
       <div class="dashboard-heading">
+
         <div>
-          <div class="eyebrow">SAFETY OVERVIEW</div>
-          <h1 id="welcomeTitle">Welcome</h1>
-          <p class="muted">Your reports and trusted contacts, together.</p>
-        </div>
 
-        <button id="refreshBtn" class="button button-outline" type="button">
-          ↻ Refresh
-        </button>
-      </div>
-
-      <div class="notice">
-        <strong>Emergency?</strong>
-        This website does not contact emergency services automatically.
-        If you are in immediate danger, contact your local emergency number
-        or a trusted person directly.
-      </div>
-
-      <div class="stats-grid">
-        <article class="stat-card">
-          <span class="stat-icon">📋</span>
-          <span class="stat-label">My incidents</span>
-          <strong id="incidentCount">0</strong>
-        </article>
-
-        <article class="stat-card">
-          <span class="stat-icon">🟠</span>
-          <span class="stat-label">Open reports</span>
-          <strong id="openCount">0</strong>
-        </article>
-
-        <article class="stat-card">
-          <span class="stat-icon">👥</span>
-          <span class="stat-label">Trusted contacts</span>
-          <strong id="contactCount">0</strong>
-        </article>
-      </div>
-
-      <div class="content-grid">
-        
-<!-- ==========================================
-     SAFESPHERE AI - EMERGENCY ACTIONS
-========================================== -->
-
-<section class="emergency-panel">
-  <h2>🚨 Emergency Assistance</h2>
-
-  <p>
-    Use these controls to add your current location
-    or start an emergency call.
-  </p>
-
-  <div class="emergency-actions">
-    <button
-      type="button"
-      id="getLocationBtn"
-      class="button button-outline"
-    >
-      📍 Get My Location
-    </button>
-
-    <button
-      type="button"
-      id="sosBtn"
-      class="button button-danger"
-    >
-      🆘 SOS Emergency
-    </button>
-  </div>
-
-  <button id="sosButton" type="button">
-  🚨 Send SOS Alert
-</button>
-
-<p id="sosMessage" role="status"></p>
-
-<a href="tel:112" class="emergency-call-button">
-  📞 Call 112
-</a>
-
-  <p id="locationMessage" class="message"></p>
-
-  <div id="locationPreview" class="location-preview hidden">
-    <p>
-      <strong>Latitude:</strong>
-      <span id="latitudePreview">—</span>
-    </p>
-
-    <p>
-      <strong>Longitude:</strong>
-      <span id="longitudePreview">—</span>
-    </p>
-
-    <a
-      id="mapLink"
-      href="#"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Open location in map
-    </a>
-  </div>
-
-  <p class="muted">
-    Location is requested only after you press the button.
-    Check the location before including it in a report.
-  </p>
-</section>
-
-<!-- SAFESPHERE AI SOS -->
-<section class="sos-section">
-  <h2>Emergency SOS</h2>
-  <p>Hold the button for 3 seconds to open emergency options.</p>
-
-  <button id="sosButton" type="button">
-    <span>🆘</span>
-    <strong>HOLD FOR SOS</strong>
-    <small id="sosHoldText">Hold for 3 seconds</small>
-  </button>
-
-  <div id="sosMessage" role="status" aria-live="polite"></div>
-</section>
-
-<!-- EMERGENCY OPTIONS -->
-<div id="sosModal" class="sos-modal hidden">
-  <div class="sos-modal-content">
-    <button id="closeSosModal" class="sos-close" type="button">
-      ✕
-    </button>
-
-    <h2>Choose Emergency Help</h2>
-    <p>Select where you need help.</p>
-
-    <button class="emergency-option" data-type="ambulance">
-      🚑 Hospital / Ambulance
-      <small>Call 108</small>
-    </button>
-
-    <button class="emergency-option" data-type="police">
-      🚔 Police Emergency
-      <small>Call 112</small>
-    </button>
-
-    <button class="emergency-option" data-type="fire">
-      🚒 Fire Brigade
-      <small>Call 101</small>
-    </button>
-
-    <div id="trustedContactOptions"></div>
-
-    <p class="sos-note">
-      Calls open your phone dialer. SMS opens your messaging app;
-      you must tap Send. Location is included only if available.
-    </p>
-  </div>
-</div>
-        <!-- INCIDENT FORM -->
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Report an incident</h2>
-              <p class="muted">Share the details of a safety concern.</p>
-            </div>
-            <span class="panel-emoji">📝</span>
+          <div class="eyebrow">
+            SAFETY OVERVIEW
           </div>
 
-          <form id="incidentForm" class="stack-form">
-            <label for="incidentTitle">Incident title</label>
+          <h1 id="welcomeTitle">
+            Welcome
+          </h1>
+
+          <p class="muted">
+            Your reports and trusted contacts, together.
+          </p>
+
+        </div>
+
+
+        <button
+          id="refreshBtn"
+          class="button button-outline"
+          type="button"
+        >
+          ↻ Refresh
+        </button>
+
+      </div>
+
+
+
+      <!-- EMERGENCY NOTICE -->
+      <div class="notice">
+
+        <strong>
+          Emergency?
+        </strong>
+
+        SafeSphere prepares and sends emergency reports
+        according to your selected options.
+
+        If you are in immediate danger,
+        contact your local emergency services directly.
+
+      </div>
+
+
+
+      <!-- ==================================================
+           STATISTICS
+      =================================================== -->
+      <div class="stats-grid">
+
+        <article class="stat-card">
+
+          <span class="stat-icon">
+            📋
+          </span>
+
+          <span class="stat-label">
+            My incidents
+          </span>
+
+          <strong id="incidentCount">
+            0
+          </strong>
+
+        </article>
+
+
+        <article class="stat-card">
+
+          <span class="stat-icon">
+            🟠
+          </span>
+
+          <span class="stat-label">
+            Open reports
+          </span>
+
+          <strong id="openCount">
+            0
+          </strong>
+
+        </article>
+
+
+        <article class="stat-card">
+
+          <span class="stat-icon">
+            👥
+          </span>
+
+          <span class="stat-label">
+            Trusted contacts
+          </span>
+
+          <strong id="contactCount">
+            0
+          </strong>
+
+        </article>
+
+      </div>
+
+
+
+      <!-- ==================================================
+           MAIN DASHBOARD GRID
+      =================================================== -->
+      <div class="content-grid">
+
+
+
+        <!-- =================================================
+             EMERGENCY ASSISTANCE
+        ================================================== -->
+        <section class="emergency-panel">
+
+          <h2>
+            🚨 Emergency Assistance
+          </h2>
+
+          <p>
+            Use these controls to get your current location
+            or start the SafeSphere emergency flow.
+          </p>
+
+
+          <div class="emergency-actions">
+
+
+            <!-- LOCATION BUTTON -->
+            <button
+              type="button"
+              id="getLocationBtn"
+              class="button button-outline"
+            >
+              📍 Get My Location
+            </button>
+
+
+          </div>
+
+
+          <!-- LOCATION STATUS -->
+          <p
+            id="locationMessage"
+            class="message"
+            role="status"
+          ></p>
+
+
+          <!-- LOCATION PREVIEW -->
+          <div
+            id="locationPreview"
+            class="location-preview hidden"
+          >
+
+            <p>
+
+              <strong>
+                Latitude:
+              </strong>
+
+              <span id="latitudePreview">
+                —
+              </span>
+
+            </p>
+
+
+            <p>
+
+              <strong>
+                Longitude:
+              </strong>
+
+              <span id="longitudePreview">
+                —
+              </span>
+
+            </p>
+
+
+            <a
+              id="mapLink"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open location in map
+            </a>
+
+          </div>
+
+
+          <p class="muted">
+            Location is requested only after you press
+            the location button or start the SOS flow.
+          </p>
+
+        </section>
+
+
+
+        <!-- =================================================
+             HOLD SOS
+        ================================================== -->
+        <section class="sos-section">
+
+          <h2>
+            🚨 Emergency SOS
+          </h2>
+
+          <p>
+            Hold the button for 3 seconds to open
+            emergency options.
+          </p>
+
+
+          <!-- ONLY ONE SOS BUTTON -->
+          <button
+            id="sosButton"
+            type="button"
+            aria-label="Hold for SOS"
+          >
+
+            <span>
+              🆘
+            </span>
+
+            <strong>
+              HOLD FOR SOS
+            </strong>
+
+            <small id="sosHoldText">
+              Hold for 3 seconds
+            </small>
+
+          </button>
+
+
+          <!-- ONLY ONE SOS MESSAGE -->
+          <div
+            id="sosMessage"
+            class="message"
+            role="status"
+            aria-live="polite"
+          ></div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             SOS EMERGENCY MODAL
+        ================================================== -->
+        <div
+          id="sosModal"
+          class="sos-modal hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sosModalTitle"
+        >
+
+          <div class="sos-modal-content">
+
+
+            <!-- CLOSE BUTTON -->
+            <button
+              id="closeSosModal"
+              class="sos-close"
+              type="button"
+              aria-label="Close emergency options"
+            >
+              ✕
+            </button>
+
+
+            <h2 id="sosModalTitle">
+              Choose Emergency Help
+            </h2>
+
+
+            <p>
+              Select where you need help.
+            </p>
+
+
+
+            <!-- ===========================================
+                 AMBULANCE
+            ============================================ -->
+            <button
+              class="emergency-option"
+              type="button"
+              data-type="ambulance"
+            >
+
+              <span>
+                🚑 Hospital / Ambulance
+              </span>
+
+              <small>
+                Call 108
+              </small>
+
+            </button>
+
+
+
+            <!-- ===========================================
+                 POLICE
+            ============================================ -->
+            <button
+              class="emergency-option"
+              type="button"
+              data-type="police"
+            >
+
+              <span>
+                🚔 Police Emergency
+              </span>
+
+              <small>
+                Call 112
+              </small>
+
+            </button>
+
+
+
+            <!-- ===========================================
+                 FIRE BRIGADE
+            ============================================ -->
+            <button
+              class="emergency-option"
+              type="button"
+              data-type="fire"
+            >
+
+              <span>
+                🚒 Fire Brigade
+              </span>
+
+              <small>
+                Call 101
+              </small>
+
+            </button>
+
+
+
+            <!-- ===========================================
+                 TRUSTED CONTACTS
+            ============================================ -->
+            <div id="trustedContactOptions">
+
+              <p class="muted">
+                Your trusted contacts will appear here.
+              </p>
+
+            </div>
+
+
+
+            <!-- SOS INFORMATION -->
+            <p class="sos-note">
+
+              SafeSphere will prepare the full emergency
+              incident report using your available information.
+
+              Email and SMS delivery depend on the configured
+              notification services.
+
+              Calls open your phone dialer.
+
+            </p>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             INCIDENT FORM
+        ================================================== -->
+        <section class="panel">
+
+          <div class="panel-heading">
+
+            <div>
+
+              <h2>
+                Report an incident
+              </h2>
+
+              <p class="muted">
+                Share the details of a safety concern.
+              </p>
+
+            </div>
+
+            <span class="panel-emoji">
+              📝
+            </span>
+
+          </div>
+
+
+
+          <form
+            id="incidentForm"
+            class="stack-form"
+          >
+
+
+            <label for="incidentTitle">
+              Incident title
+            </label>
+
             <input
               id="incidentTitle"
               type="text"
@@ -306,7 +692,11 @@
               required
             >
 
-            <label for="incidentDescription">Description</label>
+
+            <label for="incidentDescription">
+              Description
+            </label>
+
             <textarea
               id="incidentDescription"
               rows="4"
@@ -316,33 +706,94 @@
               required
             ></textarea>
 
+
+
             <div class="form-row">
-              <div>
-                <label for="incidentCategory">Category</label>
-                <select id="incidentCategory">
-                  <option>Other</option>
-                  <option>Personal Safety</option>
-                  <option>Harassment</option>
-                  <option>Infrastructure</option>
-                  <option>Traffic</option>
-                  <option>Medical</option>
-                  <option>Fire</option>
-                  <option>Environmental</option>
-                </select>
-              </div>
+
 
               <div>
-                <label for="incidentSeverity">Severity</label>
-                <select id="incidentSeverity">
-                  <option>Low</option>
-                  <option selected>Medium</option>
-                  <option>High</option>
-                  <option>Critical</option>
+
+                <label for="incidentCategory">
+                  Category
+                </label>
+
+                <select id="incidentCategory">
+
+                  <option>
+                    Other
+                  </option>
+
+                  <option>
+                    Personal Safety
+                  </option>
+
+                  <option>
+                    Harassment
+                  </option>
+
+                  <option>
+                    Infrastructure
+                  </option>
+
+                  <option>
+                    Traffic
+                  </option>
+
+                  <option>
+                    Medical
+                  </option>
+
+                  <option>
+                    Fire
+                  </option>
+
+                  <option>
+                    Environmental
+                  </option>
+
                 </select>
+
               </div>
+
+
+
+              <div>
+
+                <label for="incidentSeverity">
+                  Severity
+                </label>
+
+                <select id="incidentSeverity">
+
+                  <option>
+                    Low
+                  </option>
+
+                  <option selected>
+                    Medium
+                  </option>
+
+                  <option>
+                    High
+                  </option>
+
+                  <option>
+                    Critical
+                  </option>
+
+                </select>
+
+              </div>
+
+
             </div>
 
-            <label for="incidentLocation">Location (optional)</label>
+
+
+            <label for="incidentLocation">
+              Location (optional)
+            </label>
+
             <input
               id="incidentLocation"
               type="text"
@@ -350,9 +801,17 @@
               placeholder="Area, street, landmark..."
             >
 
+
+
             <div class="form-row">
+
+
               <div>
-                <label for="incidentLatitude">Latitude (optional)</label>
+
+                <label for="incidentLatitude">
+                  Latitude (optional)
+                </label>
+
                 <input
                   id="incidentLatitude"
                   type="number"
@@ -361,10 +820,17 @@
                   max="90"
                   placeholder="e.g. 22.5726"
                 >
+
               </div>
 
+
+
               <div>
-                <label for="incidentLongitude">Longitude (optional)</label>
+
+                <label for="incidentLongitude">
+                  Longitude (optional)
+                </label>
+
                 <input
                   id="incidentLongitude"
                   type="number"
@@ -373,29 +839,71 @@
                   max="180"
                   placeholder="e.g. 88.3639"
                 >
+
               </div>
+
+
             </div>
 
-            <button class="button button-primary full-width" type="submit">
+
+
+            <button
+              class="button button-primary full-width"
+              type="submit"
+            >
               Submit incident
             </button>
+
           </form>
 
-          <div id="incidentMessage" class="message" role="status"></div>
+
+          <div
+            id="incidentMessage"
+            class="message"
+            role="status"
+          ></div>
+
         </section>
 
-        <!-- TRUSTED CONTACT FORM -->
+
+
+        <!-- =================================================
+             TRUSTED CONTACT FORM
+        ================================================== -->
         <section class="panel">
+
           <div class="panel-heading">
+
             <div>
-              <h2>Trusted contacts</h2>
-              <p class="muted">Save people you may want to contact.</p>
+
+              <h2>
+                Trusted contacts
+              </h2>
+
+              <p class="muted">
+                Save people you may want to contact during an emergency.
+              </p>
+
             </div>
-            <span class="panel-emoji">🤝</span>
+
+            <span class="panel-emoji">
+              🤝
+            </span>
+
           </div>
 
-          <form id="contactForm" class="stack-form">
-            <label for="contactName">Contact name</label>
+
+
+          <form
+            id="contactForm"
+            class="stack-form"
+          >
+
+
+            <label for="contactName">
+              Contact name
+            </label>
+
             <input
               id="contactName"
               type="text"
@@ -405,24 +913,43 @@
               required
             >
 
-            <label for="contactPhone">Phone number</label>
+
+            <label for="contactPhone">
+              Phone number
+              <span class="muted">
+                (optional)
+              </span>
+            </label>
+
             <input
               id="contactPhone"
               type="tel"
-              minlength="5"
               maxlength="30"
               placeholder="Phone number"
-              required
             >
 
-            <label for="contactEmail">Email (optional)</label>
+
+            <label for="contactEmail">
+              Email address
+              <span class="muted">
+                (optional)
+              </span>
+            </label>
+
             <input
               id="contactEmail"
               type="email"
               placeholder="contact@example.com"
             >
 
-            <label for="contactRelationship">Relationship (optional)</label>
+
+            <label for="contactRelationship">
+              Relationship
+              <span class="muted">
+                (optional)
+              </span>
+            </label>
+
             <input
               id="contactRelationship"
               type="text"
@@ -430,50 +957,136 @@
               placeholder="e.g. Parent, Friend"
             >
 
-            <button class="button button-secondary full-width" type="submit">
+
+            <p class="muted">
+              Add at least one contact method:
+              phone number or email address.
+            </p>
+
+
+            <button
+              class="button button-secondary full-width"
+              type="submit"
+            >
               Add trusted contact
             </button>
+
           </form>
 
-          <div id="contactMessage" class="message" role="status"></div>
+
+          <div
+            id="contactMessage"
+            class="message"
+            role="status"
+          ></div>
+
         </section>
+
+
       </div>
 
-      <!-- INCIDENT LIST -->
+
+
+      <!-- ==================================================
+           INCIDENT LIST
+      =================================================== -->
       <section class="panel list-panel">
+
         <div class="panel-heading">
+
           <div>
-            <h2>My incident reports</h2>
-            <p class="muted">Reports saved to your account.</p>
+
+            <h2>
+              My incident reports
+            </h2>
+
+            <p class="muted">
+              Reports saved to your account.
+            </p>
+
           </div>
+
         </div>
 
-        <div id="incidentList" class="item-list">
-          <p class="muted">Log in to view your incidents.</p>
+
+        <div
+          id="incidentList"
+          class="item-list"
+        >
+
+          <p class="muted">
+            Log in to view your incidents.
+          </p>
+
         </div>
+
       </section>
 
-      <!-- CONTACT LIST -->
+
+
+      <!-- ==================================================
+           CONTACT LIST
+      =================================================== -->
       <section class="panel list-panel">
+
         <div class="panel-heading">
+
           <div>
-            <h2>My trusted contacts</h2>
-            <p class="muted">Only contacts saved to your account appear here.</p>
+
+            <h2>
+              My trusted contacts
+            </h2>
+
+            <p class="muted">
+              Only contacts saved to your account appear here.
+            </p>
+
           </div>
+
         </div>
 
-        <div id="contactList" class="item-list">
-          <p class="muted">Log in to view your contacts.</p>
+
+        <div
+          id="contactList"
+          class="item-list"
+        >
+
+          <p class="muted">
+            Log in to view your contacts.
+          </p>
+
         </div>
+
       </section>
+
+
     </section>
+
   </main>
 
+
+
+  <!-- ======================================================
+       FOOTER
+  ======================================================= -->
   <footer class="footer">
-    <p>SafeSphere AI · Student hackathon project</p>
-    <p>Demo only. Do not use this app as your sole emergency-response method.</p>
+
+    <p>
+      SafeSphere AI · Student hackathon project
+    </p>
+
+    <p>
+      Demo only. Do not use this app as your sole emergency-response method.
+    </p>
+
   </footer>
 
+
+
+  <!-- ======================================================
+       JAVASCRIPT
+  ======================================================= -->
   <script src="app.js"></script>
+
 </body>
 </html>
