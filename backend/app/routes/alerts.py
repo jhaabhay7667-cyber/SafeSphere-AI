@@ -37,29 +37,6 @@ logger = logging.getLogger(__name__)
 # ============================================================
 
 class SOSAlertRequest(BaseModel):
-    """
-    Data received when the frontend triggers an SOS alert.
-
-    contact_id:
-        If provided, only that trusted contact receives
-        the notification.
-
-        If not provided, all trusted contacts are notified.
-
-    emergency_name:
-        Example:
-            Hospital / Ambulance
-            Police Emergency
-            Fire Brigade
-            Trusted Contact
-
-    emergency_phone:
-        Example:
-            108
-            112
-            101
-            +919876543210
-    """
 
     title: str = Field(
         default="SOS Emergency Alert",
@@ -90,15 +67,7 @@ class SOSAlertRequest(BaseModel):
 
     longitude: float | None = None
 
-    # --------------------------------------------------------
-    # SELECTED TRUSTED CONTACT
-    # --------------------------------------------------------
-
     contact_id: int | None = None
-
-    # --------------------------------------------------------
-    # SELECTED EMERGENCY DESTINATION
-    # --------------------------------------------------------
 
     emergency_name: str | None = Field(
         default=None,
@@ -110,17 +79,7 @@ class SOSAlertRequest(BaseModel):
         max_length=50,
     )
 
-    # --------------------------------------------------------
-    # BACKWARD COMPATIBILITY
-    #
-    # Older frontend code may send:
-    #   message
-    #   location_text
-    #
-    # We keep these fields so the backend doesn't break if
-    # an older frontend request is still being used.
-    # --------------------------------------------------------
-
+    # Backward compatibility
     message: str | None = Field(
         default=None,
         max_length=5000,
@@ -141,10 +100,6 @@ def build_alert_message(
     incident: SOSAlertRequest,
 ) -> tuple[str, str]:
 
-    # --------------------------------------------------------
-    # Use old frontend fields if the newer fields are empty
-    # --------------------------------------------------------
-
     description = (
         incident.description
         if incident.description
@@ -157,10 +112,6 @@ def build_alert_message(
         if incident.location
         else incident.location_text
     )
-
-    # --------------------------------------------------------
-    # Basic values
-    # --------------------------------------------------------
 
     subject = f"SafeSphere AI - {incident.title}"
 
@@ -198,10 +149,7 @@ def build_alert_message(
         else "Not specified"
     )
 
-    # --------------------------------------------------------
     # Google Maps link
-    # --------------------------------------------------------
-
     if (
         incident.latitude is not None
         and incident.longitude is not None
@@ -213,10 +161,7 @@ def build_alert_message(
     else:
         maps_link = "Not available"
 
-    # --------------------------------------------------------
-    # FULL INCIDENT REPORT
-    # --------------------------------------------------------
-
+    # Full incident report
     body = f"""
 ============================================================
 SAFESPHERE AI - SOS EMERGENCY ALERT
@@ -361,6 +306,10 @@ def send_email(
 
         return True, "Email accepted by SMTP server."
 
+    # --------------------------------------------------------
+    # Gmail authentication error
+    # --------------------------------------------------------
+
     except smtplib.SMTPAuthenticationError:
 
         logger.exception(
@@ -372,6 +321,10 @@ def send_email(
             "Check SMTP_USERNAME and Google App Password."
         )
 
+    # --------------------------------------------------------
+    # Other SMTP errors
+    # --------------------------------------------------------
+
     except smtplib.SMTPException:
 
         logger.exception(
@@ -382,14 +335,18 @@ def send_email(
             "SMTP server rejected or failed the email."
         )
 
-    except Exception:
+    # --------------------------------------------------------
+    # Unexpected error
+    # --------------------------------------------------------
+
+    except Exception as exc:
 
         logger.exception(
             "Unexpected email error."
         )
 
         return False, (
-            "Unexpected email error."
+            f"Email error: {type(exc).__name__}: {str(exc)}"
         )
 
 
@@ -444,6 +401,10 @@ def send_sms(
             "Delivery is not confirmed."
         )
 
+    # --------------------------------------------------------
+    # Twilio error
+    # --------------------------------------------------------
+
     except TwilioRestException as exc:
 
         logger.error(
@@ -466,14 +427,18 @@ def send_sms(
             f"(code {exc.code}): {exc.msg}"
         )
 
-    except Exception:
+    # --------------------------------------------------------
+    # Unexpected SMS error
+    # --------------------------------------------------------
+
+    except Exception as exc:
 
         logger.exception(
             "Unexpected SMS error."
         )
 
         return False, (
-            "Unexpected SMS error."
+            f"SMS error: {type(exc).__name__}: {str(exc)}"
         )
 
 
@@ -486,16 +451,6 @@ def get_sos_contacts(
     current_user,
     contact_id: int | None = None,
 ):
-    """
-    Get trusted contacts for the SOS.
-
-    contact_id supplied:
-        Only the selected contact is returned.
-
-    contact_id not supplied:
-        All contacts belonging to the logged-in user
-        are returned.
-    """
 
     query = (
         db.query(TrustedContact)
@@ -506,7 +461,7 @@ def get_sos_contacts(
     )
 
     # --------------------------------------------------------
-    # Specific trusted contact selected
+    # Specific contact selected
     # --------------------------------------------------------
 
     if contact_id is not None:
@@ -534,7 +489,7 @@ def get_sos_contacts(
 
     # --------------------------------------------------------
     # No contact selected
-    # Send to all trusted contacts
+    # Return all contacts
     # --------------------------------------------------------
 
     return (
@@ -547,7 +502,7 @@ def get_sos_contacts(
 
 
 # ============================================================
-# BUILD RECIPIENT
+# BUILD CONTACT RECIPIENT
 # ============================================================
 
 def build_contact_recipient(contact):
@@ -639,13 +594,7 @@ def send_sos_alert(
 
     # --------------------------------------------------------
     # Add trusted contacts
-    #
-    # IMPORTANT:
-    # We add the contact if it has EITHER:
-    #
-    # email OR phone
-    #
-    # This fixes phone-only contacts.
+    # Supports email-only and phone-only contacts
     # --------------------------------------------------------
 
     for contact in contacts:
@@ -772,16 +721,6 @@ def send_sos_alert(
 
     # ========================================================
     # CALL TARGET
-    #
-    # IMPORTANT:
-    # Backend DOES NOT make the phone call.
-    #
-    # It returns the number to the frontend.
-    #
-    # The frontend can then use:
-    #
-    # window.location.href = "tel:" + number
-    #
     # ========================================================
 
     call_target_phone = None
