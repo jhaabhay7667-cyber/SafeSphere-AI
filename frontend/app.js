@@ -2,7 +2,7 @@
 // SAFESPHERE AI - FRONTEND API CONNECTION
 // ======================================================
 
-const API_BASE = "https://safesphere-ai-qg3h.onrender.com";
+const API_BASE = "https://safesphere-ai-1.onrender.com";
 
 const TOKEN_KEY = "safesphere_access_token";
 const USER_KEY = "safesphere_user";
