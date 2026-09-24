@@ -3,9 +3,9 @@
 # ============================================================
 
 import logging
-import smtplib
 from datetime import datetime, timezone
-from email.message import EmailMessage
+
+import resend
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -37,7 +37,6 @@ logger = logging.getLogger(__name__)
 # ============================================================
 
 class SOSAlertRequest(BaseModel):
-
     title: str = Field(
         default="SOS Emergency Alert",
         max_length=200,
@@ -49,7 +48,7 @@ class SOSAlertRequest(BaseModel):
     )
 
     category: str = Field(
-        default="Emergency",
+        default="Other",
         max_length=100,
     )
 
@@ -64,11 +63,12 @@ class SOSAlertRequest(BaseModel):
     )
 
     latitude: float | None = None
-
     longitude: float | None = None
 
+    # Selected trusted contact
     contact_id: int | None = None
 
+    # Emergency call information
     emergency_name: str | None = Field(
         default=None,
         max_length=100,
@@ -76,10 +76,10 @@ class SOSAlertRequest(BaseModel):
 
     emergency_phone: str | None = Field(
         default=None,
-        max_length=50,
+        max_length=30,
     )
 
-    # Backward compatibility
+    # Backward-compatible fields
     message: str | None = Field(
         default=None,
         max_length=5000,
@@ -92,26 +92,13 @@ class SOSAlertRequest(BaseModel):
 
 
 # ============================================================
-# BUILD FULL INCIDENT REPORT
+# BUILD FULL SOS INCIDENT REPORT
 # ============================================================
 
 def build_alert_message(
     sender_name: str,
     incident: SOSAlertRequest,
 ) -> tuple[str, str]:
-
-    description = (
-        incident.description
-        if incident.description
-        else incident.message
-        or "Emergency assistance requested."
-    )
-
-    location_value = (
-        incident.location
-        if incident.location
-        else incident.location_text
-    )
 
     subject = f"SafeSphere AI - {incident.title}"
 
@@ -132,117 +119,82 @@ def build_alert_message(
     )
 
     location = (
-        location_value.strip()
-        if location_value
-        else "Location not provided"
-    )
-
-    emergency_name = (
-        incident.emergency_name.strip()
-        if incident.emergency_name
-        else "Not specified"
-    )
-
-    emergency_phone = (
-        incident.emergency_phone.strip()
-        if incident.emergency_phone
-        else "Not specified"
-    )
-
-    # Google Maps link
-    if (
-        incident.latitude is not None
-        and incident.longitude is not None
-    ):
-        maps_link = (
-            "https://www.google.com/maps?q="
-            f"{incident.latitude},{incident.longitude}"
+        incident.location.strip()
+        if incident.location
+        else (
+            incident.location_text.strip()
+            if incident.location_text
+            else "Location not provided"
         )
-    else:
-        maps_link = "Not available"
+    )
 
-    # Full incident report
+    description = (
+        incident.description.strip()
+        if incident.description
+        else (
+            incident.message.strip()
+            if incident.message
+            else "Emergency assistance requested."
+        )
+    )
+
     body = f"""
-============================================================
 SAFESPHERE AI - SOS EMERGENCY ALERT
-============================================================
 
-URGENT: An emergency alert has been triggered.
+An emergency alert has been submitted.
 
-------------------------------------------------------------
-USER INFORMATION
-------------------------------------------------------------
+==================================================
+SENDER INFORMATION
+==================================================
 
-Name:
-{sender_name}
+Name: {sender_name}
 
-------------------------------------------------------------
+==================================================
 INCIDENT INFORMATION
-------------------------------------------------------------
+==================================================
 
-Incident:
-{incident.title}
-
-Category:
-{incident.category}
-
-Severity:
-{incident.severity}
+Incident: {incident.title}
+Category: {incident.category}
+Severity: {incident.severity}
 
 Description:
 {description}
 
-------------------------------------------------------------
-EMERGENCY DESTINATION
-------------------------------------------------------------
-
-Selected destination:
-{emergency_name}
-
-Destination phone:
-{emergency_phone}
-
-------------------------------------------------------------
+==================================================
 LOCATION INFORMATION
-------------------------------------------------------------
+==================================================
 
 Location:
 {location}
 
-Latitude:
-{latitude}
-
-Longitude:
-{longitude}
-
-Google Maps:
-{maps_link}
-
-------------------------------------------------------------
-TIME
-------------------------------------------------------------
+Latitude: {latitude}
+Longitude: {longitude}
 
 Reported at:
 {current_time}
+"""
 
-------------------------------------------------------------
-ACTION REQUIRED
-------------------------------------------------------------
+    if incident.latitude is not None and incident.longitude is not None:
+        body += f"""
 
-Please contact the sender and check their safety immediately.
+Google Maps Location:
+https://www.google.com/maps?q={incident.latitude},{incident.longitude}
+"""
 
-This alert was generated automatically by SafeSphere AI.
+    body += """
 
-============================================================
-END OF INCIDENT REPORT
-============================================================
+==================================================
+
+Please contact the sender and check their safety.
+
+This is an automated emergency notification from SafeSphere AI.
 """
 
     return subject, body.strip()
 
 
 # ============================================================
-# EMAIL SENDER
+# RESEND EMAIL SENDER
 # ============================================================
 
 def send_email(
@@ -251,107 +203,61 @@ def send_email(
     body: str,
 ) -> tuple[bool, str]:
 
-    smtp_host = settings.smtp_host
-    smtp_port = settings.smtp_port
-    smtp_username = settings.smtp_username
-    smtp_password = settings.smtp_password
-    smtp_from = settings.smtp_from or smtp_username
+    api_key = settings.resend_api_key
+    from_email = settings.resend_from_email
 
-    # --------------------------------------------------------
-    # Validate SMTP settings
-    # --------------------------------------------------------
+    if not api_key:
+        return False, "Resend API key is not configured."
 
-    if (
-        not smtp_host
-        or not smtp_username
-        or not smtp_password
-    ):
-        return False, "SMTP settings are incomplete."
+    if not from_email:
+        return False, "RESEND_FROM_EMAIL is not configured."
 
     if not recipient:
         return False, "Recipient email is missing."
 
-    # --------------------------------------------------------
-    # Create email
-    # --------------------------------------------------------
-
-    message = EmailMessage()
-
-    message["Subject"] = subject
-    message["From"] = smtp_from
-    message["To"] = recipient
-
-    message.set_content(body)
-
-    # --------------------------------------------------------
-    # Send email
-    # --------------------------------------------------------
-
     try:
+        # Configure Resend API key
+        resend.api_key = api_key
 
-        with smtplib.SMTP(
-            smtp_host,
-            smtp_port,
-            timeout=20,
-        ) as server:
+        params = {
+            "from": from_email,
+            "to": [recipient],
+            "subject": subject,
+            "text": body,
+        }
 
-            server.starttls()
+        response = resend.Emails.send(params)
 
-            server.login(
-                smtp_username,
-                smtp_password,
+        email_id = None
+
+        if isinstance(response, dict):
+            email_id = response.get("id")
+        else:
+            email_id = getattr(response, "id", None)
+
+        if email_id:
+            return True, (
+                "Email accepted by Resend. "
+                f"Resend ID: {email_id}. "
+                "Delivery is not confirmed."
             )
 
-            server.send_message(message)
-
-        return True, "Email accepted by SMTP server."
-
-    # --------------------------------------------------------
-    # Gmail authentication error
-    # --------------------------------------------------------
-
-    except smtplib.SMTPAuthenticationError:
-
-        logger.exception(
-            "SMTP authentication failed."
+        return True, (
+            "Email request accepted by Resend. "
+            "Delivery is not confirmed."
         )
-
-        return False, (
-            "Gmail authentication failed. "
-            "Check SMTP_USERNAME and Google App Password."
-        )
-
-    # --------------------------------------------------------
-    # Other SMTP errors
-    # --------------------------------------------------------
-
-    except smtplib.SMTPException:
-
-        logger.exception(
-            "SMTP sending failed."
-        )
-
-        return False, (
-            "SMTP server rejected or failed the email."
-        )
-
-    # --------------------------------------------------------
-    # Unexpected error
-    # --------------------------------------------------------
 
     except Exception as exc:
-
-        logger.exception(
-            "Unexpected email error."
-        )
+        logger.exception("Resend email sending failed.")
 
         return False, (
-            f"Email error: {type(exc).__name__}: {str(exc)}"
+            f"Resend email error: "
+            f"{type(exc).__name__}: {str(exc)}"
         )
 
 
 # ============================================================
-# SMS SENDER
+# TWILIO SMS SENDER
 # ============================================================
 
 def send_sms(
@@ -363,26 +269,13 @@ def send_sms(
     auth_token = settings.twilio_auth_token
     sender_number = settings.twilio_phone_number
 
-    # --------------------------------------------------------
-    # Validate Twilio settings
-    # --------------------------------------------------------
-
-    if (
-        not account_sid
-        or not auth_token
-        or not sender_number
-    ):
+    if not account_sid or not auth_token or not sender_number:
         return False, "Twilio settings are incomplete."
 
     if not recipient:
         return False, "Recipient phone number is missing."
 
-    # --------------------------------------------------------
-    # Send SMS
-    # --------------------------------------------------------
-
     try:
-
         client = Client(
             account_sid,
             auth_token,
@@ -401,10 +294,6 @@ def send_sms(
             "Delivery is not confirmed."
         )
 
-    # --------------------------------------------------------
-    # Twilio error
-    # --------------------------------------------------------
-
     except TwilioRestException as exc:
 
         logger.error(
@@ -416,20 +305,15 @@ def send_sms(
         )
 
         if exc.code == 20003:
-
             return False, (
                 "Twilio authentication failed. "
                 "Check Account SID and Auth Token."
             )
 
         return False, (
-            "Twilio rejected the request "
+            f"Twilio rejected the request "
             f"(code {exc.code}): {exc.msg}"
         )
-
-    # --------------------------------------------------------
-    # Unexpected SMS error
-    # --------------------------------------------------------
 
     except Exception as exc:
 
@@ -438,82 +322,39 @@ def send_sms(
         )
 
         return False, (
-            f"SMS error: {type(exc).__name__}: {str(exc)}"
+            f"SMS error: "
+            f"{type(exc).__name__}: {str(exc)}"
         )
 
 
 # ============================================================
-# GET TRUSTED CONTACTS
+# GET SELECTED TRUSTED CONTACT
 # ============================================================
 
-def get_sos_contacts(
+def get_selected_contact(
     db: Session,
     current_user,
-    contact_id: int | None = None,
+    contact_id: int | None,
 ):
+    if contact_id is None:
+        return None
 
-    query = (
+    contact = (
         db.query(TrustedContact)
         .filter(
-            TrustedContact.user_id
-            == current_user.id
+            TrustedContact.id == contact_id,
+            TrustedContact.user_id == current_user.id,
         )
+        .first()
     )
 
-    # --------------------------------------------------------
-    # Specific contact selected
-    # --------------------------------------------------------
-
-    if contact_id is not None:
-
-        contact = (
-            query
-            .filter(
-                TrustedContact.id
-                == contact_id
-            )
-            .first()
+    if not contact:
+        raise HTTPException(
+            status_code=404,
+            detail="Selected trusted contact was not found.",
         )
 
-        if not contact:
-
-            raise HTTPException(
-                status_code=404,
-                detail=(
-                    "Trusted contact not found "
-                    "or does not belong to this user."
-                ),
-            )
-
-        return [contact]
-
-    # --------------------------------------------------------
-    # No contact selected
-    # Return all contacts
-    # --------------------------------------------------------
-
-    return (
-        query
-        .order_by(
-            TrustedContact.created_at.desc()
-        )
-        .all()
-    )
-
-
-# ============================================================
-# BUILD CONTACT RECIPIENT
-# ============================================================
-
-def build_contact_recipient(contact):
-
-    return {
-        "name": contact.name,
-        "email": contact.email,
-        "phone": contact.phone,
-        "is_sender": False,
-        "contact_id": contact.id,
-    }
+    return contact
 
 
 # ============================================================
@@ -527,21 +368,13 @@ def send_sos_alert(
     current_user=Depends(get_current_user),
 ):
 
-    # ========================================================
-    # USER INFORMATION
-    # ========================================================
+    # --------------------------------------------------------
+    # Sender information
+    # --------------------------------------------------------
 
     sender_name = (
-        getattr(
-            current_user,
-            "name",
-            None,
-        )
-        or getattr(
-            current_user,
-            "full_name",
-            None,
-        )
+        getattr(current_user, "name", None)
+        or getattr(current_user, "full_name", None)
         or "SafeSphere User"
     )
 
@@ -551,77 +384,86 @@ def send_sos_alert(
         None,
     )
 
-    # ========================================================
-    # BUILD FULL REPORT
-    # ========================================================
+    # --------------------------------------------------------
+    # Selected emergency contact
+    # --------------------------------------------------------
+
+    selected_contact = get_selected_contact(
+        db=db,
+        current_user=current_user,
+        contact_id=incident.contact_id,
+    )
+
+    # --------------------------------------------------------
+    # Build full incident report
+    # --------------------------------------------------------
 
     subject, alert_body = build_alert_message(
         sender_name=sender_name,
         incident=incident,
     )
 
-    # ========================================================
-    # GET TRUSTED CONTACTS
-    # ========================================================
+    # --------------------------------------------------------
+    # Get all trusted contacts
+    # --------------------------------------------------------
 
-    contacts = get_sos_contacts(
-        db=db,
-        current_user=current_user,
-        contact_id=incident.contact_id,
+    contacts = (
+        db.query(TrustedContact)
+        .filter(
+            TrustedContact.user_id == current_user.id
+        )
+        .order_by(
+            TrustedContact.created_at.desc()
+        )
+        .all()
     )
 
-    # ========================================================
-    # PREPARE RECIPIENTS
-    # ========================================================
+    # --------------------------------------------------------
+    # Prepare recipients
+    # --------------------------------------------------------
 
     recipients = []
 
-    # --------------------------------------------------------
-    # Add logged-in user's email as a copy
-    # --------------------------------------------------------
-
+    # Sender gets an email copy
     if sender_email:
+        recipients.append({
+            "name": sender_name,
+            "contact_id": None,
+            "email": sender_email,
+            "phone": None,
+            "is_sender": True,
+        })
 
-        recipients.append(
-            {
-                "name": sender_name,
-                "email": sender_email,
-                "phone": None,
-                "is_sender": True,
-                "contact_id": None,
-            }
-        )
-
-    # --------------------------------------------------------
-    # Add trusted contacts
-    # Supports email-only and phone-only contacts
-    # --------------------------------------------------------
-
+    # Trusted contacts
     for contact in contacts:
 
+        # Include a contact if they have
+        # either email OR phone.
         if contact.email or contact.phone:
 
-            recipients.append(
-                build_contact_recipient(
-                    contact
-                )
-            )
+            recipients.append({
+                "name": contact.name,
+                "contact_id": contact.id,
+                "email": contact.email,
+                "phone": contact.phone,
+                "is_sender": False,
+            })
 
-    # ========================================================
-    # SEND NOTIFICATIONS
-    # ========================================================
+    # --------------------------------------------------------
+    # Notification counters
+    # --------------------------------------------------------
 
     results = []
 
+    email_attempt_count = 0
     email_success_count = 0
+
+    sms_attempt_count = 0
     sms_success_count = 0
 
-    email_attempt_count = 0
-    sms_attempt_count = 0
-
-    # ========================================================
-    # PROCESS EVERY RECIPIENT
-    # ========================================================
+    # --------------------------------------------------------
+    # Send email + SMS
+    # --------------------------------------------------------
 
     for recipient in recipients:
 
@@ -651,9 +493,9 @@ def send_sos_alert(
 
         if email_address:
 
-            contact_result["email"]["attempted"] = True
-
             email_attempt_count += 1
+
+            contact_result["email"]["attempted"] = True
 
             email_success, email_message = send_email(
                 recipient=email_address,
@@ -661,16 +503,10 @@ def send_sos_alert(
                 body=alert_body,
             )
 
-            contact_result["email"]["success"] = (
-                email_success
-            )
-
-            contact_result["email"]["message"] = (
-                email_message
-            )
+            contact_result["email"]["success"] = email_success
+            contact_result["email"]["message"] = email_message
 
             if email_success:
-
                 email_success_count += 1
 
         # ----------------------------------------------------
@@ -681,151 +517,105 @@ def send_sos_alert(
 
         if phone_number:
 
-            contact_result["sms"]["attempted"] = True
-
             sms_attempt_count += 1
+
+            contact_result["sms"]["attempted"] = True
 
             sms_success, sms_message = send_sms(
                 recipient=str(phone_number),
                 body=alert_body,
             )
 
-            contact_result["sms"]["success"] = (
-                sms_success
-            )
-
-            contact_result["sms"]["message"] = (
-                sms_message
-            )
+            contact_result["sms"]["success"] = sms_success
+            contact_result["sms"]["message"] = sms_message
 
             if sms_success:
-
                 sms_success_count += 1
 
-        # ----------------------------------------------------
-        # Save result
-        # ----------------------------------------------------
+        results.append(contact_result)
 
-        results.append(
-            contact_result
+    # --------------------------------------------------------
+    # Determine call target
+    # --------------------------------------------------------
+
+    call_name = None
+    call_phone = None
+
+    if selected_contact:
+
+        call_name = selected_contact.name
+        call_phone = selected_contact.phone
+
+    elif incident.emergency_phone:
+
+        call_name = (
+            incident.emergency_name
+            or "Emergency Contact"
         )
 
-    # ========================================================
-    # OVERALL SUCCESS
-    # ========================================================
+        call_phone = incident.emergency_phone
 
-    any_success = (
+    call_target = {
+        "available": bool(call_phone),
+        "name": call_name,
+        "phone": call_phone,
+    }
+
+    # --------------------------------------------------------
+    # Overall success
+    # --------------------------------------------------------
+
+    any_notification_success = (
         email_success_count > 0
         or sms_success_count > 0
     )
 
-    # ========================================================
-    # CALL TARGET
-    # ========================================================
+    if any_notification_success:
 
-    call_target_phone = None
-    call_target_name = None
-
-    # --------------------------------------------------------
-    # Emergency service selected
-    # --------------------------------------------------------
-
-    if incident.emergency_phone:
-
-        call_target_phone = (
-            incident.emergency_phone
-        )
-
-        call_target_name = (
-            incident.emergency_name
-            or "Emergency Service"
-        )
-
-    # --------------------------------------------------------
-    # Trusted contact selected
-    # --------------------------------------------------------
-
-    elif (
-        incident.contact_id is not None
-        and len(contacts) == 1
-    ):
-
-        selected_contact = contacts[0]
-
-        if selected_contact.phone:
-
-            call_target_phone = (
-                str(selected_contact.phone)
-            )
-
-            call_target_name = (
-                selected_contact.name
-            )
-
-    # ========================================================
-    # RESULT MESSAGE
-    # ========================================================
-
-    if any_success:
-
-        result_message = (
+        response_message = (
             "At least one notification was accepted "
             "by its provider. Delivery is not confirmed."
         )
 
     else:
 
-        if not recipients:
+        response_message = (
+            "No notification was accepted by its provider."
+        )
 
-            result_message = (
-                "No notification recipients are "
-                "available. Add a trusted contact "
-                "with an email address or phone number."
-            )
-
-        else:
-
-            result_message = (
-                "No notification was accepted "
-                "by its provider."
-            )
-
-    # ========================================================
-    # RETURN RESPONSE
-    # ========================================================
+    # --------------------------------------------------------
+    # Final response
+    # --------------------------------------------------------
 
     return {
-        "success": any_success,
+        "success": any_notification_success,
 
-        "message": result_message,
+        "message": response_message,
 
         "sender_name": sender_name,
-
         "sender_email": sender_email,
 
         "total_contacts": len(contacts),
 
         "email_attempt_count": email_attempt_count,
-
         "email_success_count": email_success_count,
 
         "sms_attempt_count": sms_attempt_count,
-
         "sms_success_count": sms_success_count,
 
         "selected_contact_id": incident.contact_id,
 
-        "emergency_name": incident.emergency_name,
+        "emergency_name": (
+            call_name
+            or incident.emergency_name
+        ),
 
-        "emergency_phone": incident.emergency_phone,
+        "emergency_phone": (
+            call_phone
+            or incident.emergency_phone
+        ),
 
-        "call_target": {
-            "available": bool(
-                call_target_phone
-            ),
-            "name": call_target_name,
-            "phone": call_target_phone,
-        },
+        "call_target": call_target,
 
         "results": results,
     }

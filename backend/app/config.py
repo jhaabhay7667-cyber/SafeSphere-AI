@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = ""
 
+    # Resend Email API settings
+    resend_api_key: str = ""
+    resend_from_email: str = ""
+
     # Twilio SMS settings
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
