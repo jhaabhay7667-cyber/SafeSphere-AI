@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,13 +7,27 @@ from . import models
 from .routes import auth, incidents, contacts, alerts
 
 
+# ============================================================
+# DATABASE
+# ============================================================
+
 Base.metadata.create_all(bind=engine)
+
+
+# ============================================================
+# FASTAPI APPLICATION
+# ============================================================
 
 app = FastAPI(
     title="SafeSphere AI",
     description="AI-powered safety and incident reporting platform",
     version="1.0.0",
 )
+
+
+# ============================================================
+# CORS
+# ============================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,13 +41,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ============================================================
+# ROUTERS
+# ============================================================
+
 app.include_router(auth.router)
 app.include_router(incidents.router)
 app.include_router(contacts.router)
-
-# SOS email + SMS router
 app.include_router(alerts.router)
 
+
+# ============================================================
+# ROOT
+# ============================================================
 
 @app.get("/")
 def root():
@@ -44,9 +64,23 @@ def root():
     }
 
 
+# ============================================================
+# BASIC HEALTH CHECK
+# ============================================================
+
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok"
+    }
+
+
+# ============================================================
+# PROVIDER CONFIGURATION CHECK
+# ============================================================
+# This endpoint ONLY returns True/False.
+# It NEVER exposes passwords, API keys, or tokens.
+# ============================================================
 
 @app.get("/api/health/providers")
 def provider_config_check():
@@ -58,6 +92,12 @@ def provider_config_check():
             "from": bool(settings.smtp_from),
             "port": settings.smtp_port,
         },
+
+        "resend": {
+            "api_key": bool(settings.resend_api_key),
+            "from_email": bool(settings.resend_from_email),
+        },
+
         "twilio": {
             "account_sid": bool(settings.twilio_account_sid),
             "auth_token": bool(settings.twilio_auth_token),
